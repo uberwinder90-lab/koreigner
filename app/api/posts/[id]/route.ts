@@ -1,120 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getAdminSupabase } from '@/lib/supabase/admin'
 
-interface Params {
-  params: Promise<{ id: string }>
-}
+interface Params { params: Promise<{ id: string }> }
 
-export async function GET(_request: NextRequest, { params }: Params) {
-  try {
-    const { id } = await params
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
-      .from('posts')
-      .select(`
-        *,
-        profiles!posts_author_id_fkey(id, username, display_name, profile_image_url),
-        categories!posts_category_id_fkey(id, name, slug),
-        post_media(id, file_url, display_order),
-        post_likes(count)
-      `)
-      .eq('id', id)
-      .eq('status', 'published')
-      .single()
-
-    if (error || !data) {
-      return NextResponse.json({ error: 'Post not found.' }, { status: 404 })
-    }
-
-    const post = data as unknown as { views_count: number }
-    supabase.from('posts').update({ views_count: post.views_count + 1 } as never).eq('id', id).then(() => {})
-
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error('GET /api/posts/[id] error:', error)
-    return NextResponse.json({ error: 'Failed to fetch post.' }, { status: 500 })
-  }
+export async function GET(_req: NextRequest, { params }: Params) {
+  const { id } = await params
+  const db = getAdminSupabase()
+  const { data, error } = await db
+    .from('posts')
+    .select('*, profiles!posts_author_id_fkey(*), categories!posts_category_id_fkey(*), post_media(*), post_likes(count)')
+    .eq('id', id).eq('status', 'published').single()
+  if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  await db.from('posts').update({ views_count: ((data as unknown as { views_count: number }).views_count ?? 0) + 1 } as never).eq('id', id)
+  return NextResponse.json(data)
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  try {
-    const { id } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { title, content, categoryId, embeddedUrl, mediaUrls } = await request.json()
+  const db = getAdminSupabase()
+  const { data: existing } = await db.from('posts').select('author_id').eq('id', id).single()
+  const post = existing as unknown as { author_id: string } | null
+  if (!post || post.author_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { data: existing } = await supabase
-      .from('posts')
-      .select('author_id')
-      .eq('id', id)
-      .single()
+  const { title, content, categoryId, embeddedUrl, mediaUrls } = await request.json()
 
-    const existingPost = existing as unknown as { author_id: string } | null
+  const { error } = await db.from('posts').update({
+    title: title?.trim(),
+    content: content?.trim() || null,
+    category_id: categoryId ? Number(categoryId) : undefined,
+    embedded_url: embeddedUrl?.trim() || null,
+    updated_at: new Date().toISOString(),
+  } as never).eq('id', id)
 
-    if (!existingPost || existingPost.author_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (mediaUrls !== undefined) {
+    await db.from('post_media').delete().eq('post_id', id)
+    if (mediaUrls.length > 0) {
+      await db.from('post_media').insert(
+        mediaUrls.map((url: string, i: number) => ({ post_id: id, file_url: url, display_order: i })) as never
+      )
     }
-
-    const { error } = await supabase
-      .from('posts')
-      .update({
-        title: title.trim(),
-        content: content?.trim() ?? null,
-        category_id: categoryId,
-        embedded_url: embeddedUrl?.trim() || null,
-        updated_at: new Date().toISOString(),
-      } as never)
-      .eq('id', id)
-
-    if (error) throw error
-
-    if (mediaUrls !== undefined) {
-      await supabase.from('post_media').delete().eq('post_id', id)
-      if (mediaUrls.length > 0) {
-        await supabase.from('post_media').insert(
-          mediaUrls.map((url: string, i: number) => ({
-            post_id: id,
-            file_url: url,
-            display_order: i,
-          })) as never
-        )
-      }
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('PATCH /api/posts/[id] error:', error)
-    return NextResponse.json({ error: 'Failed to update post.' }, { status: 500 })
   }
+
+  return NextResponse.json({ success: true })
 }
 
-export async function DELETE(_request: NextRequest, { params }: Params) {
-  try {
-    const { id } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: existing } = await supabase
-      .from('posts')
-      .select('author_id')
-      .eq('id', id)
-      .single()
+  const db = getAdminSupabase()
+  const { data: existing } = await db.from('posts').select('author_id').eq('id', id).single()
+  const post = existing as unknown as { author_id: string } | null
+  if (!post || post.author_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const existingPost = existing as unknown as { author_id: string } | null
-
-    if (!existingPost || existingPost.author_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    await supabase.from('posts').update({ status: 'deleted' } as never).eq('id', id)
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('DELETE /api/posts/[id] error:', error)
-    return NextResponse.json({ error: 'Failed to delete post.' }, { status: 500 })
-  }
+  await db.from('posts').update({ status: 'deleted' } as never).eq('id', id)
+  return NextResponse.json({ success: true })
 }
