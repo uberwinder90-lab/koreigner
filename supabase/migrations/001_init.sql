@@ -186,19 +186,43 @@ CREATE POLICY "comments_update_own" ON public.comments FOR UPDATE USING (auth.ui
 -- Same pattern for images and videos buckets.
 
 -- =============================================
--- AUTO-PROFILE TRIGGER (optional helper)
--- Creates a profile row automatically when a user signs up
--- Only use if you handle profile creation via trigger
+-- AUTO-PROFILE TRIGGER
+-- Runs in Supabase DB → creates profile row on every new signup
 -- =============================================
--- CREATE OR REPLACE FUNCTION public.handle_new_user()
--- RETURNS TRIGGER AS $$
--- BEGIN
---   INSERT INTO public.profiles (id, username, display_name)
---   VALUES (NEW.id, SPLIT_PART(NEW.email, '@', 1), SPLIT_PART(NEW.email, '@', 1));
---   RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql SECURITY DEFINER;
---
--- CREATE TRIGGER on_auth_user_created
---   AFTER INSERT ON auth.users
---   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, username, display_name, profile_image_url)
+  VALUES (
+    NEW.id,
+    'user_' || substr(replace(NEW.id::text, '-', ''), 1, 12),
+    COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.raw_user_meta_data->>'name',
+      split_part(COALESCE(NEW.email, 'user'), '@', 1)
+    ),
+    NEW.raw_user_meta_data->>'avatar_url'
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- =============================================
+-- BACKFILL: Create profiles for users that are missing one
+-- Run this ONCE to fix existing users
+-- =============================================
+INSERT INTO public.profiles (id, username, display_name)
+SELECT
+  au.id,
+  'user_' || substr(replace(au.id::text, '-', ''), 1, 12),
+  COALESCE(au.raw_user_meta_data->>'full_name', split_part(COALESCE(au.email, 'user'), '@', 1))
+FROM auth.users au
+LEFT JOIN public.profiles p ON p.id = au.id
+WHERE p.id IS NULL
+ON CONFLICT (id) DO NOTHING;
