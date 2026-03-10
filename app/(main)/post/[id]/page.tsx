@@ -124,87 +124,97 @@ export default async function PostPage({ params }: Props) {
   const nextPost = nextData as unknown as NavPost | null
 
   return (
-    <div className="page-container py-6">
+    <div className="page-container py-8">
       <div className="max-w-3xl mx-auto">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-text-tertiary mb-4">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+        <nav className="flex items-center gap-1.5 text-xs mb-5 flex-wrap" style={{ color: 'var(--text-4)' }}>
+          <Link href="/" className="hover:text-[var(--primary)] transition-colors">Home</Link>
           <span>/</span>
           {post.categories && (
             <>
-              <Link
-                href={`/?category=${post.categories.slug}`}
-                className="hover:text-primary transition-colors"
-              >
+              <Link href={`/?category=${post.categories.slug}`} className="hover:text-[var(--primary)] transition-colors">
                 {post.categories.name}
               </Link>
               <span>/</span>
             </>
           )}
-          <span className="text-text-secondary line-clamp-1">{post.title}</span>
+          <span className="line-clamp-1" style={{ color: 'var(--text-3)' }}>{post.title}</span>
         </nav>
 
         {/* Post */}
-        <article className="card p-6 mb-4">
-          <h1 className="text-xl font-bold text-text-primary mb-4">{post.title}</h1>
+        <article className="card p-6 sm:p-8 mb-4">
+          {/* Category badge */}
+          {post.categories && (
+            <Link href={`/?category=${post.categories.slug}`} className="badge-category mb-3 inline-block">
+              {post.categories.name}
+            </Link>
+          )}
 
-          {/* Author */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-            <div className="flex items-center gap-2">
-              {author && (
-                <Link href={`/profile/${author.username}`} className="flex items-center gap-2 group">
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-primary-light relative">
-                    {author.profile_image_url ? (
-                      <Image src={author.profile_image_url} alt={author.display_name} fill className="object-cover" />
-                    ) : (
-                      <span className="text-xs font-bold text-primary flex items-center justify-center w-full h-full">
-                        {author.display_name[0]?.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">
-                      {author.display_name}
-                    </p>
-                    <p className="text-xs text-text-tertiary">{timeAgo(post.created_at)}</p>
-                  </div>
-                </Link>
-              )}
-            </div>
-            <span className="text-xs text-text-tertiary">{post.views_count} views</span>
+          <h1 className="text-xl sm:text-2xl font-bold mb-5 leading-snug" style={{ color: 'var(--text-1)' }}>
+            {post.title}
+          </h1>
+
+          {/* Author row */}
+          <div className="flex items-center justify-between mb-6 pb-5" style={{ borderBottom: '1px solid var(--border)' }}>
+            {author && (
+              <Link href={`/profile/${author.username}`} className="flex items-center gap-3 group">
+                <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0"
+                  style={{ background: 'var(--primary-light)' }}>
+                  {author.profile_image_url ? (
+                    <Image src={author.profile_image_url} alt={author.display_name} fill className="object-cover" />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center text-sm font-bold"
+                      style={{ color: 'var(--primary)' }}>
+                      {author.display_name[0]?.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold group-hover:text-[var(--primary)] transition-colors"
+                    style={{ color: 'var(--text-1)' }}>
+                    {author.display_name}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--text-4)' }}>{timeAgo(post.created_at)}</p>
+                </div>
+              </Link>
+            )}
+            <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-4)' }}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {post.views_count}
+            </span>
           </div>
 
           {/* Content */}
           {post.content && (
-            <div
-              className="prose prose-sm max-w-none text-text-primary mb-6"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
+            <div className="prose-content mb-6" dangerouslySetInnerHTML={{ __html: post.content }} />
           )}
 
           {/* Embedded URL */}
           {embedHtml ? (
-            <div className="mb-6" dangerouslySetInnerHTML={{ __html: embedHtml }} />
+            <div className="mb-6 rounded-xl overflow-hidden" dangerouslySetInnerHTML={{ __html: embedHtml }} />
           ) : post.embedded_url ? (
-            <a
-              href={post.embedded_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block mb-6 text-sm text-primary hover:underline break-all"
-            >
-              {post.embedded_url}
+            <a href={post.embedded_url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-2 mb-6 p-3 rounded-lg text-sm hover:opacity-80 transition-opacity"
+              style={{ background: 'var(--bg-alt)', color: 'var(--primary)' }}>
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <span className="break-all line-clamp-1">{post.embedded_url}</span>
             </a>
           ) : null}
 
           {/* Media Gallery */}
           {media.length > 0 && (
-            <div className={`grid gap-2 mb-6 ${media.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            <div className={`grid gap-3 mb-6 ${media.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {media.map((m) => {
                 const isVideo = /\.(mp4|webm|ogg)$/i.test(m.file_url)
                 return isVideo ? (
-                  <video key={m.id} src={m.file_url} controls className="w-full rounded-md" />
+                  <video key={m.id} src={m.file_url} controls className="w-full rounded-xl" />
                 ) : (
-                  <div key={m.id} className="relative aspect-video rounded-md overflow-hidden">
+                  <div key={m.id} className="relative aspect-video rounded-xl overflow-hidden">
                     <Image src={m.file_url} alt="" fill className="object-cover" />
                   </div>
                 )
@@ -223,27 +233,31 @@ export default async function PostPage({ params }: Props) {
         </article>
 
         {/* Prev / Next */}
-        <div className="card p-3 mb-4 grid grid-cols-2 gap-3 text-sm">
+        <div className="card p-4 mb-4 grid grid-cols-2 gap-4 text-sm">
           <div>
             {prevPost ? (
-              <Link href={`/post/${prevPost.id}`} className="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors">
-                <span className="text-text-tertiary">←</span>
+              <Link href={`/post/${prevPost.id}`}
+                className="flex items-center gap-1.5 hover:text-[var(--primary)] transition-colors"
+                style={{ color: 'var(--text-3)' }}>
+                <span>←</span>
                 <span className="line-clamp-1">{prevPost.title}</span>
               </Link>
-            ) : <span className="text-text-tertiary text-xs">No previous post</span>}
+            ) : <span className="text-xs" style={{ color: 'var(--text-4)' }}>No previous</span>}
           </div>
           <div className="text-right">
             {nextPost ? (
-              <Link href={`/post/${nextPost.id}`} className="flex items-center justify-end gap-1 text-text-secondary hover:text-primary transition-colors">
+              <Link href={`/post/${nextPost.id}`}
+                className="flex items-center justify-end gap-1.5 hover:text-[var(--primary)] transition-colors"
+                style={{ color: 'var(--text-3)' }}>
                 <span className="line-clamp-1">{nextPost.title}</span>
-                <span className="text-text-tertiary">→</span>
+                <span>→</span>
               </Link>
-            ) : <span className="text-text-tertiary text-xs">No next post</span>}
+            ) : <span className="text-xs" style={{ color: 'var(--text-4)' }}>No next</span>}
           </div>
         </div>
 
         {/* Comments */}
-        <div className="card p-6">
+        <div className="card p-6 sm:p-8">
           <CommentList postId={id} currentUser={user} />
         </div>
       </div>

@@ -26,9 +26,10 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt,
     } as never)
 
-    // 이메일 발송
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
+    // 이메일 발송 (Resend는 throw 대신 { error } 반환)
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
       to: email,
       subject: 'Koreigner — Email Verification Code',
       html: `
@@ -46,6 +47,14 @@ export async function POST(request: NextRequest) {
         </div>
       `,
     })
+
+    if (error) {
+      console.error('Resend API error:', JSON.stringify(error))
+      return NextResponse.json(
+        { error: 'Failed to send verification code. Please try again.' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

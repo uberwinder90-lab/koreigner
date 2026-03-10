@@ -29,91 +29,102 @@ export default function PostCard({ post, isNew, isBest }: PostCardProps) {
   const likesCount = post.post_likes?.[0]?.count ?? 0
   const commentsCount = post.comments?.[0]?.count ?? 0
   const excerpt = post.content
-    ? post.content.replace(/<[^>]+>/g, '').slice(0, 100)
+    ? post.content.replace(/<[^>]+>/g, '').trim().slice(0, 120)
     : ''
 
   return (
-    <article className="card p-4 hover:border-primary/30 hover:shadow-md transition-all duration-150">
-      <div className="flex items-start justify-between gap-3">
+    <article
+      className="card card-hover group"
+      style={{ padding: '16px 20px' }}
+    >
+      <div className="flex gap-4 items-start">
+        {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Category + Badges */}
-          <div className="flex items-center gap-1.5 mb-1.5">
+          {/* Badges + Category row */}
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
             {post.categories && (
               <Link
                 href={`/?category=${post.categories.slug}`}
-                className="text-xs text-primary bg-primary-light px-2 py-0.5 rounded hover:bg-primary/10 transition-colors"
+                className="badge-category hover:opacity-80 transition-opacity"
+                onClick={e => e.stopPropagation()}
               >
                 {post.categories.name}
               </Link>
             )}
             {isNew && <span className="badge-new">NEW</span>}
-            {isBest && <span className="badge-best">BEST</span>}
+            {isBest && <span className="badge-best">🔥 HOT</span>}
           </div>
 
           {/* Title */}
-          <h2 className="text-sm font-semibold text-text-primary mb-1 line-clamp-1">
-            <Link href={`/post/${post.id}`} className="hover:text-primary transition-colors">
+          <h2 className="text-sm font-semibold mb-1.5 leading-snug line-clamp-2" style={{ color: 'var(--text-1)' }}>
+            <Link
+              href={`/post/${post.id}`}
+              className="hover:underline transition-colors group-hover:text-[var(--primary)]"
+              style={{ color: 'inherit' }}
+            >
               {post.title}
             </Link>
           </h2>
 
           {/* Excerpt */}
           {excerpt && (
-            <p className="text-xs text-text-tertiary line-clamp-1 mb-2">{excerpt}</p>
+            <p className="text-xs line-clamp-1 mb-2.5 leading-relaxed" style={{ color: 'var(--text-4)' }}>
+              {excerpt}
+            </p>
           )}
 
-          {/* Meta */}
-          <div className="flex items-center gap-3 text-xs text-text-tertiary">
+          {/* Author + time */}
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-4)' }}>
             {post.profiles && (
               <Link
                 href={`/profile/${post.profiles.username}`}
-                className="flex items-center gap-1.5 hover:text-text-secondary transition-colors"
+                className="flex items-center gap-1.5 hover:text-[var(--primary)] transition-colors"
+                onClick={e => e.stopPropagation()}
               >
-                <div className="w-4 h-4 rounded-full overflow-hidden bg-primary-light flex-shrink-0 relative">
+                <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0 relative"
+                  style={{ background: 'var(--primary-light)' }}>
                   {post.profiles.profile_image_url ? (
-                    <Image
-                      src={post.profiles.profile_image_url}
-                      alt={post.profiles.display_name}
-                      fill
-                      className="object-cover"
-                    />
+                    <Image src={post.profiles.profile_image_url} alt={post.profiles.display_name} fill className="object-cover" />
                   ) : (
-                    <span className="text-[8px] font-bold text-primary flex items-center justify-center w-full h-full">
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold" style={{ color: 'var(--primary)' }}>
                       {post.profiles.display_name[0]?.toUpperCase()}
                     </span>
                   )}
                 </div>
-                <span>{post.profiles.display_name}</span>
+                <span className="font-medium">{post.profiles.display_name}</span>
               </Link>
             )}
+            <span>·</span>
             <span>{timeAgo(post.created_at)}</span>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="flex flex-col items-end gap-1 flex-shrink-0 text-xs text-text-tertiary">
-          <span className="flex items-center gap-0.5">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            {post.views_count}
-          </span>
-          <span className="flex items-center gap-0.5">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-            {likesCount}
-          </span>
-          <span className="flex items-center gap-0.5">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            {commentsCount}
-          </span>
+        {/* Stats column */}
+        <div className="flex flex-col items-end gap-2 flex-shrink-0 pt-0.5">
+          <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-4)' }}>
+            {/* Views */}
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {post.views_count}
+            </span>
+            {/* Likes */}
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              {likesCount}
+            </span>
+            {/* Comments */}
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+              </svg>
+              {commentsCount}
+            </span>
+          </div>
         </div>
       </div>
     </article>

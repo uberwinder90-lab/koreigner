@@ -3,48 +3,34 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import PostCard from '@/components/post/PostCard'
 import Sidebar from '@/components/layout/Sidebar'
+
 interface PostCardPost {
   id: string
   title: string
   content: string | null
   created_at: string
   views_count: number
-  profiles: {
-    username: string
-    display_name: string
-    profile_image_url: string | null
-  } | null
-  categories: {
-    name: string
-    slug: string
-  } | null
+  profiles: { username: string; display_name: string; profile_image_url: string | null } | null
+  categories: { name: string; slug: string } | null
   post_likes: { count: number }[]
   comments: { count: number }[]
 }
 
-interface SearchParams {
-  tab?: string
-  category?: string
-  page?: string
-}
+interface SearchParams { tab?: string; category?: string; page?: string }
+interface Props { searchParams: Promise<SearchParams> }
 
-interface Props {
-  searchParams: Promise<SearchParams>
-}
-
-const POSTS_PER_PAGE = 20
-const NEW_POST_THRESHOLD_HOURS = 24
-const BEST_VIEWS_THRESHOLD = 100
+const PER_PAGE = 20
+const NEW_HOURS = 24
+const HOT_VIEWS = 50
 
 async function PostList({ tab, category, page }: { tab: string; category?: string; page: number }) {
   const supabase = await createClient()
-  const offset = (page - 1) * POSTS_PER_PAGE
+  const offset = (page - 1) * PER_PAGE
 
   let query = supabase
     .from('posts')
     .select(`
-      id, title, content, created_at, updated_at, views_count,
-      author_id,
+      id, title, content, created_at, views_count,
       profiles!posts_author_id_fkey(id, username, display_name, profile_image_url),
       categories!posts_category_id_fkey(id, name, slug),
       post_likes(count),
@@ -54,62 +40,81 @@ async function PostList({ tab, category, page }: { tab: string; category?: strin
 
   if (category) {
     const { data: cat } = await supabase.from('categories').select('id').eq('slug', category).single()
-    const catData = cat as unknown as { id: number } | null
-    if (catData) query = query.eq('category_id', catData.id)
+    const catRow = cat as unknown as { id: number } | null
+    if (catRow) query = query.eq('category_id', catRow.id)
   }
 
-  if (tab === 'best') {
-    query = query.order('views_count', { ascending: false })
-  } else {
-    query = query.order('created_at', { ascending: false })
-  }
+  query = tab === 'best'
+    ? query.order('views_count', { ascending: false })
+    : query.order('created_at', { ascending: false })
 
-  const { data, count } = await query.range(offset, offset + POSTS_PER_PAGE - 1)
+  const { data, count } = await query.range(offset, offset + PER_PAGE - 1)
   const posts = (data ?? []) as unknown as PostCardPost[]
-  const totalPages = Math.ceil((count ?? 0) / POSTS_PER_PAGE)
+  const totalPages = Math.ceil((count ?? 0) / PER_PAGE)
   const now = Date.now()
+
+  if (!posts.length) {
+    return (
+      <div className="card py-16 text-center">
+        <div className="text-4xl mb-4">✍️</div>
+        <p className="font-semibold mb-1" style={{ color: 'var(--text-2)' }}>No posts yet</p>
+        <p className="text-sm mb-5" style={{ color: 'var(--text-4)' }}>Be the first to share something with the community!</p>
+        <Link href="/submit" className="btn-primary">Write First Post</Link>
+      </div>
+    )
+  }
 
   return (
     <>
       <div className="space-y-2 mb-6">
-        {posts.length > 0 ? (
-          posts.map((post) => {
-            const hoursSince = (now - new Date(post.created_at).getTime()) / 3600000
-            const isNew = hoursSince < NEW_POST_THRESHOLD_HOURS
-            const isBest = post.views_count >= BEST_VIEWS_THRESHOLD
-            return (
-              <PostCard
-                key={post.id}
-                post={post}
-                isNew={isNew}
-                isBest={isBest}
-              />
-            )
-          })
-        ) : (
-          <div className="card p-12 text-center text-text-tertiary">
-            <p className="text-lg mb-1">No posts yet</p>
-            <p className="text-sm">Be the first to share something!</p>
-          </div>
-        )}
+        {posts.map((post) => {
+          const hoursSince = (now - new Date(post.created_at).getTime()) / 3600000
+          return (
+            <PostCard
+              key={post.id}
+              post={post}
+              isNew={hoursSince < NEW_HOURS}
+              isBest={post.views_count >= HOT_VIEWS}
+            />
+          )
+        })}
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <nav className="flex justify-center gap-1">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+        <nav className="flex justify-center gap-1.5">
+          {page > 1 && (
             <Link
-              key={p}
-              href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${p}`}
-              className={`w-8 h-8 flex items-center justify-center rounded text-sm font-medium transition-colors
-                ${p === page
-                  ? 'bg-primary text-white'
-                  : 'text-text-secondary hover:bg-gray-100'
-                }`}
+              href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${page - 1}`}
+              className="btn-secondary px-3 py-2 text-sm"
             >
-              {p}
+              ←
             </Link>
-          ))}
+          )}
+          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+            const p = i + 1
+            return (
+              <Link
+                key={p}
+                href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${p}`}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
+                  p === page
+                    ? 'btn-primary'
+                    : 'btn-secondary px-0 py-0'
+                }`}
+              >
+                {p}
+              </Link>
+            )
+          })}
+          {page < totalPages && (
+            <Link
+              href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${page + 1}`}
+              className="btn-secondary px-3 py-2 text-sm"
+            >
+              →
+            </Link>
+          )}
         </nav>
       )}
     </>
@@ -121,42 +126,59 @@ export default async function HomePage({ searchParams }: Props) {
   const page = Math.max(1, parseInt(pageStr))
 
   return (
-    <div className="page-container py-6">
-      <div className="flex gap-6">
-        {/* Main Content */}
+    <div className="page-container py-8">
+      <div className="flex gap-7">
+        {/* Main */}
         <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-lg font-bold text-text-primary">Community</h1>
-            <Link href="/submit" className="btn-primary text-xs px-3 py-1.5">
-              + Write Post
+          {/* Top bar */}
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>
+                {category ? `#${category}` : 'Community'}
+              </h1>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-4)' }}>
+                Foreigners sharing life in Korea
+              </p>
+            </div>
+            <Link href="/submit" className="btn-primary text-sm px-4 py-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Write
             </Link>
           </div>
 
-          {/* Tab Bar */}
-          <div className="flex gap-0 mb-4 border-b border-border">
-            {(['new', 'best'] as const).map((t) => (
+          {/* Tabs */}
+          <div
+            className="flex gap-1 p-1 rounded-xl mb-5 w-fit"
+            style={{ background: 'var(--bg-alt)' }}
+          >
+            {(['new', 'best'] as const).map(t => (
               <Link
                 key={t}
                 href={`?tab=${t}${category ? `&category=${category}` : ''}`}
-                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors
-                  ${tab === t
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-text-secondary hover:text-text-primary'
-                  }`}
+                className={`px-5 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                  tab === t
+                    ? 'text-white shadow-sm'
+                    : 'hover:bg-white'
+                }`}
+                style={{
+                  background: tab === t ? 'var(--primary)' : 'transparent',
+                  color: tab === t ? 'white' : 'var(--text-3)',
+                }}
               >
-                {t === 'new' ? 'New' : 'Best'}
+                {t === 'new' ? '🕐 New' : '🔥 Hot'}
               </Link>
             ))}
           </div>
 
-          {/* Post List */}
+          {/* Posts */}
           <Suspense
             key={`${tab}-${category}-${page}`}
             fallback={
               <div className="space-y-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="card p-4 h-20 animate-pulse bg-gray-100" />
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="skeleton h-24 rounded-xl" />
                 ))}
               </div>
             }
@@ -167,7 +189,12 @@ export default async function HomePage({ searchParams }: Props) {
 
         {/* Sidebar */}
         <div className="hidden lg:block w-64 flex-shrink-0">
-          <Suspense fallback={<div className="space-y-4"><div className="card h-40 animate-pulse bg-gray-100" /></div>}>
+          <Suspense fallback={
+            <div className="space-y-4">
+              <div className="skeleton h-52 rounded-xl" />
+              <div className="skeleton h-40 rounded-xl" />
+            </div>
+          }>
             <Sidebar />
           </Suspense>
         </div>
