@@ -15,12 +15,16 @@ export default function Header() {
   const dropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => listener.subscription.unsubscribe()
+    try {
+      const supabase = createClient()
+      supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null)).catch(() => {})
+      const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
+        setUser(session?.user ?? null)
+      })
+      return () => listener.subscription.unsubscribe()
+    } catch {
+      // Supabase client init failed (e.g. env vars not set)
+    }
   }, [])
 
   // close dropdown on outside click

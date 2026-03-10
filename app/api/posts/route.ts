@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     const db = getAdminSupabase()
-
     let query = db
       .from('posts')
       .select(`
@@ -35,7 +34,6 @@ export async function GET(request: NextRequest) {
 
     const { data, count, error } = await query.range(offset, offset + limit - 1)
     if (error) throw error
-
     return NextResponse.json({ posts: data ?? [], total: count ?? 0, page, limit })
   } catch (err) {
     console.error('GET /api/posts:', err)
@@ -45,36 +43,55 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth check
+    // 1. Auth check
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const { data: { user }, error: authErr } = await supabase.auth.getUser()
+    if (authErr || !user) {
       return NextResponse.json({ error: 'Please log in to post.' }, { status: 401 })
     }
 
     const body = await request.json()
     const { title, content, categoryId, embeddedUrl, mediaUrls } = body
-
     if (!title?.trim()) return NextResponse.json({ error: 'Title is required.' }, { status: 400 })
     if (!categoryId) return NextResponse.json({ error: 'Category is required.' }, { status: 400 })
 
     const db = getAdminSupabase()
 
-    // Verify profile exists (create if missing for Google OAuth users)
+    // 2. Ensure profile exists (auto-create for OAuth / first-time users)
     const { data: profile } = await db.from('profiles').select('id').eq('id', user.id).single()
     if (!profile) {
-      const emailBase = (user.email ?? 'user').split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20) || 'user'
-      const displayName = user.user_metadata?.full_name || user.user_metadata?.name || emailBase
-      await db.from('profiles').insert({
+      const emailBase = (user.email ?? 'user').split('@')[0]
+        .replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20) || 'user'
+      const displayName = user.user_metadata?.full_name
+        || user.user_metadata?.name
+        || emailBase
+
+      let username = emailBase
+      let attempt = 0
+      while (true) {
+        const candidate = attempt === 0 ? username : `${username}${attempt}`
+        const { data: taken } = await db.from('profiles').select('id').eq('username', candidate).single()
+        if (!taken) { username = candidate; break }
+        if (++attempt > 99) { username = `user_${Date.now()}`; break }
+      }
+
+      const { error: profileErr } = await db.from('profiles').insert({
         id: user.id,
-        username: `${emailBase}_${Date.now()}`,
+        username,
         display_name: String(displayName).slice(0, 50),
         profile_image_url: user.user_metadata?.avatar_url ?? null,
       } as never)
+
+      if (profileErr) {
+        console.error('[POST /api/posts] Profile auto-create failed:', profileErr.message)
+        return NextResponse.json({
+          error: `Profile setup failed: ${profileErr.message}. Please go to My Page to complete your profile.`
+        }, { status: 500 })
+      }
     }
 
-    // Create post
-    const { data: post, error: postError } = await db
+    // 3. Create post
+    const { data: post, error: postErr } = await db
       .from('posts')
       .insert({
         title: title.trim(),
@@ -87,25 +104,24 @@ export async function POST(request: NextRequest) {
       .select('id')
       .single()
 
-    if (postError) {
-      console.error('Post insert error:', JSON.stringify(postError))
-      return NextResponse.json({ error: `Database error: ${postError.message}` }, { status: 500 })
+    if (postErr || !post) {
+      console.error('[POST /api/posts] Insert failed:', postErr?.message)
+      return NextResponse.json({ error: postErr?.message ?? 'Post creation failed.' }, { status: 500 })
     }
-    if (!post) return NextResponse.json({ error: 'Post creation returned no data.' }, { status: 500 })
 
     const postId = (post as unknown as { id: string }).id
 
-    // Save media
+    // 4. Save media
     if (mediaUrls?.length > 0) {
-      const { error: mediaError } = await db.from('post_media').insert(
+      const { error: mediaErr } = await db.from('post_media').insert(
         mediaUrls.map((url: string, i: number) => ({ post_id: postId, file_url: url, display_order: i })) as never
       )
-      if (mediaError) console.error('Media insert error:', JSON.stringify(mediaError))
+      if (mediaErr) console.error('[POST /api/posts] Media insert failed:', mediaErr.message)
     }
 
     return NextResponse.json({ postId }, { status: 201 })
   } catch (err) {
-    console.error('POST /api/posts:', err)
+    console.error('[POST /api/posts] Unexpected:', err)
     return NextResponse.json({ error: `Unexpected error: ${String(err)}` }, { status: 500 })
   }
 }
