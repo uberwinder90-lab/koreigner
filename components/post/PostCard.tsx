@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { timeAgo } from '@/lib/utils'
+import { useLang } from '@/lib/i18n'
 
 interface PostCardProps {
   post: {
@@ -28,6 +29,7 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, isNew, isBest }: PostCardProps) {
+  const { lang } = useLang()
   const likesCount = post.post_likes?.[0]?.count ?? 0
   const commentsCount = post.comments?.[0]?.count ?? 0
   const excerpt = post.content
@@ -97,7 +99,7 @@ export default function PostCard({ post, isNew, isBest }: PostCardProps) {
               </Link>
             )}
             <span>·</span>
-            <span>{timeAgo(post.created_at)}</span>
+            <span>{timeAgo(post.created_at, lang)}</span>
           </div>
         </div>
 

@@ -61,6 +61,11 @@
   input, textarea, select { font-family: inherit; }
 }
 
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
 @layer components {
   /* ─── Buttons ─── */
   .btn-primary {
@@ -237,6 +242,30 @@
   margin: 1em 0;
 }
 .prose-content img { border-radius: var(--radius-md); max-width: 100%; margin: 1em 0; }
+/* Reddit-style inline media: full width, large */
+.prose-content .post-inline-media {
+  margin: 1.25em 0;
+  width: 100%;
+}
+.prose-content .post-inline-media img {
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  margin: 0;
+}
+.prose-content .post-inline-media video {
+  width: 100%;
+  max-height: 70vh;
+  border-radius: var(--radius-lg);
+}
+/* Inline image size options (blog-style) */
+.prose-content .post-inline-media.post-img-small { max-width: 33%; margin-left: 0; margin-right: auto; }
+.prose-content .post-inline-media.post-img-medium { max-width: 60%; margin-left: auto; margin-right: auto; }
+.prose-content .post-inline-media.post-img-large { max-width: 100%; }
+.prose-content .post-inline-media.post-img-small img,
+.prose-content .post-inline-media.post-img-medium img,
+.prose-content .post-inline-media.post-img-large img { width: 100%; }
 .prose-content code {
   background: var(--bg-alt);
   border-radius: var(--radius-xs);

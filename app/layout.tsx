@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import { LangProvider } from '@/lib/i18n'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,13 +27,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="ko" className={inter.variable}>
       <body>
-        <Header />
-        <main className="min-h-[calc(100vh-60px-73px)]">
-          {children}
-        </main>
-        <Footer />
+        <LangProvider>
+          <Header />
+          <main className="min-h-[calc(100vh-60px-73px)]">
+            {children}
+          </main>
+          <Footer />
+        </LangProvider>
       </body>
     </html>
   )

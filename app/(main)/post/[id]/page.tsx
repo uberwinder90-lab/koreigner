@@ -105,19 +105,21 @@ export default async function PostPage({ params }: Props) {
               <div className="prose-content mb-5" dangerouslySetInnerHTML={{ __html: post.content }} />
             )}
 
-            {/* Media gallery */}
+            {/* Media gallery (attachments: Reddit-style large) */}
             {media.length > 0 && (
-              <div className={`mb-5 ${media.length === 1 ? '' : 'grid grid-cols-2 gap-2'}`}>
+              <div className={`mb-5 space-y-4 ${media.length > 1 ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : ''}`}>
                 {media.map(m => {
                   const isVideo = /\.(mp4|webm|ogg)$/i.test(m.file_url)
                   return isVideo ? (
-                    <video key={m.id} src={m.file_url} controls className="w-full rounded-xl max-h-[520px] object-contain"
-                      style={{ background: '#000' }} />
+                    <figure key={m.id} className="post-inline-media">
+                      <video src={m.file_url} controls className="w-full rounded-xl max-h-[70vh] object-contain"
+                        style={{ background: '#000' }} />
+                    </figure>
                   ) : (
-                    <div key={m.id} className="relative overflow-hidden rounded-xl"
-                      style={{ background: 'var(--bg-alt)', minHeight: media.length === 1 ? '240px' : '160px' }}>
+                    <figure key={m.id} className="post-inline-media relative overflow-hidden rounded-xl w-full"
+                      style={{ background: 'var(--bg-alt)', minHeight: '280px' }}>
                       <Image src={m.file_url} alt="Post image" fill className="object-contain" sizes="(max-width: 768px) 100vw, 700px" />
-                    </div>
+                    </figure>
                   )
                 })}
               </div>

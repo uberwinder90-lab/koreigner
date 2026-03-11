@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import PostCard from '@/components/post/PostCard'
 import Sidebar from '@/components/layout/Sidebar'
+import HomeHeader from '@/components/home/HomeHeader'
 
 interface PostCardPost {
   id: string
@@ -57,9 +58,9 @@ async function PostList({ tab, category, page }: { tab: string; category?: strin
     return (
       <div className="card py-16 text-center">
         <div className="text-4xl mb-4">✍️</div>
-        <p className="font-semibold mb-1" style={{ color: 'var(--text-2)' }}>No posts yet</p>
-        <p className="text-sm mb-5" style={{ color: 'var(--text-4)' }}>Be the first to share something with the community!</p>
-        <Link href="/submit" className="btn-primary">Write First Post</Link>
+        <p className="font-semibold mb-1" style={{ color: 'var(--text-2)' }}>아직 게시글이 없어요</p>
+        <p className="text-sm mb-5" style={{ color: 'var(--text-4)' }}>첫 번째 게시글을 작성해 보세요!</p>
+        <Link href="/submit" className="btn-primary">글쓰기</Link>
       </div>
     )
   }
@@ -80,16 +81,10 @@ async function PostList({ tab, category, page }: { tab: string; category?: strin
         })}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <nav className="flex justify-center gap-1.5">
           {page > 1 && (
-            <Link
-              href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${page - 1}`}
-              className="btn-secondary px-3 py-2 text-sm"
-            >
-              ←
-            </Link>
+            <Link href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${page - 1}`} className="btn-secondary px-3 py-2 text-sm">←</Link>
           )}
           {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
             const p = i + 1
@@ -97,23 +92,14 @@ async function PostList({ tab, category, page }: { tab: string; category?: strin
               <Link
                 key={p}
                 href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${p}`}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
-                  p === page
-                    ? 'btn-primary'
-                    : 'btn-secondary px-0 py-0'
-                }`}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${p === page ? 'btn-primary' : 'btn-secondary px-0 py-0'}`}
               >
                 {p}
               </Link>
             )
           })}
           {page < totalPages && (
-            <Link
-              href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${page + 1}`}
-              className="btn-secondary px-3 py-2 text-sm"
-            >
-              →
-            </Link>
+            <Link href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${page + 1}`} className="btn-secondary px-3 py-2 text-sm">→</Link>
           )}
         </nav>
       )}
@@ -130,49 +116,8 @@ export default async function HomePage({ searchParams }: Props) {
       <div className="flex gap-7">
         {/* Main */}
         <div className="flex-1 min-w-0">
-          {/* Top bar */}
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h1 className="text-xl font-bold" style={{ color: 'var(--text-1)' }}>
-                {category ? `#${category}` : 'Community'}
-              </h1>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-4)' }}>
-                Foreigners sharing life in Korea
-              </p>
-            </div>
-            <Link href="/submit" className="btn-primary text-sm px-4 py-2">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Write
-            </Link>
-          </div>
+          <HomeHeader tab={tab} category={category} />
 
-          {/* Tabs */}
-          <div
-            className="flex gap-1 p-1 rounded-xl mb-5 w-fit"
-            style={{ background: 'var(--bg-alt)' }}
-          >
-            {(['new', 'best'] as const).map(t => (
-              <Link
-                key={t}
-                href={`?tab=${t}${category ? `&category=${category}` : ''}`}
-                className={`px-5 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
-                  tab === t
-                    ? 'text-white shadow-sm'
-                    : 'hover:bg-white'
-                }`}
-                style={{
-                  background: tab === t ? 'var(--primary)' : 'transparent',
-                  color: tab === t ? 'white' : 'var(--text-3)',
-                }}
-              >
-                {t === 'new' ? '🕐 New' : '🔥 Hot'}
-              </Link>
-            ))}
-          </div>
-
-          {/* Posts */}
           <Suspense
             key={`${tab}-${category}-${page}`}
             fallback={

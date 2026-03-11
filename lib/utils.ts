@@ -1,7 +1,8 @@
 import { formatDistanceToNow } from 'date-fns'
+import { ko, enUS } from 'date-fns/locale'
 
-export function timeAgo(date: string | Date): string {
-  return formatDistanceToNow(new Date(date), { addSuffix: true })
+export function timeAgo(date: string | Date, lang: 'ko' | 'en' = 'ko'): string {
+  return formatDistanceToNow(new Date(date), { addSuffix: true, locale: lang === 'ko' ? ko : enUS })
 }
 
 export function cn(...classes: (string | undefined | null | false)[]): string {
