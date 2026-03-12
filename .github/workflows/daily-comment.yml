@@ -1,0 +1,30 @@
+name: AI Comment Writer
+
+on:
+  schedule:
+    # 글 작성 cron 보다 30분 뒤에 실행 → 자연스러운 시차
+    - cron: '30 0 * * *'   # 오전 09:30 KST
+    - cron: '0 3 * * *'    # 오후 12:00 KST
+    - cron: '30 5 * * *'   # 오후 02:30 KST
+    - cron: '0 8 * * *'    # 오후 05:00 KST
+    - cron: '30 10 * * *'  # 오후 07:30 KST
+    - cron: '0 13 * * *'   # 오후 10:00 KST
+    - cron: '30 15 * * *'  # 자정 00:30 KST
+
+  workflow_dispatch:
+
+jobs:
+  write-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post AI comment on a recent post
+        run: |
+          RESPONSE=$(curl -s -o /tmp/res.json -w "%{http_code}" \
+            -X POST "${{ secrets.SITE_URL }}/api/seed-comment" \
+            -H "x-seed-secret: ${{ secrets.SEED_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 30)
+          echo "HTTP: $RESPONSE"
+          cat /tmp/res.json
+          # 댓글 실패해도 워크플로우는 성공 처리 (최근 글 없는 경우 등)
+          exit 0

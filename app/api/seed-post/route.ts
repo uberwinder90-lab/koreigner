@@ -5,7 +5,7 @@ function checkSecret(req: NextRequest) {
   return req.headers.get('x-seed-secret') === process.env.SEED_SECRET
 }
 
-// ── 카테고리 가중치: Community 50%, Jobs 20%, House 15%, Marketplace 10%, Info 5% ──
+// ── 카테고리 가중치: Community 50% ──
 const CATEGORY_WEIGHTS = [
   { slug: 'free',        weight: 50 },
   { slug: 'jobs',        weight: 20 },
@@ -24,119 +24,178 @@ function weightedRandomCategory(): string {
   return 'free'
 }
 
-const PERSONA_USERNAMES = [
-  'jake_usa', 'sophie_fr', 'alex_hk', 'yuki_jp',
-  'linh_vn', 'priya_in', 'marcus_us', 'wei_cn',
-]
-
-// 각 페르소나의 배경과 말투 정의
-const PERSONA_DETAILS: Record<string, { name: string; background: string; voice: string }> = {
+// ── 12명 전체 페르소나 ──
+const ALL_PERSONAS: Record<string, {
+  name: string
+  background: string
+  voice: string
+  preferredCategories?: string[]
+}> = {
   jake_usa: {
     name: 'Jake',
-    background: 'American software engineer, living in Gangnam for 3 years. Loves 치맥 and hiking, slightly addicted to 편의점 snacks. Works at a startup, dealing with Korean work culture.',
-    voice: 'Very casual American. Uses "lol", "ngl", "tbh", "honestly though". Short punchy sentences. Occasionally self-deprecating. References his Texas hometown. Not afraid to admit when he has no clue.',
+    background: 'American software engineer, 3 years in Gangnam. Startup culture. Loves 치맥, hiking, and 편의점 snacks at midnight.',
+    voice: 'Casual American. Short punchy sentences. "ngl", "tbh", "honestly though". Self-deprecating sometimes. Texas references.',
+    preferredCategories: ['free', 'jobs', 'info'],
   },
   sophie_fr: {
     name: 'Sophie',
-    background: 'French teacher at Hongik University. Has lived in Korea 2 years. Passionate about food comparisons between France and Korea. Finds Korean directness refreshing. Goes to Hongdae cafes to grade papers.',
-    voice: 'Warm and thoughtful. Slightly more formal than Americans. Occasionally compares things to France. Asks genuine questions. Uses "oh là là" humorously. Good grammar but conversational.',
+    background: 'French teacher at Hongik University. 2 years in Mapo. Passionate food opinions. Compares everything to France.',
+    voice: 'Warm and thoughtful. Slightly formal. Genuine questions. Occasionally "oh là là" as humor. Good grammar but natural.',
+    preferredCategories: ['free', 'info', 'realestate'],
   },
   alex_hk: {
     name: 'Alex',
-    background: 'British financial analyst in Yeouido. Moved from London. Dry British sense of humor. Weekends hiking Bukhansan. Finds Korea\'s efficiency impressive but misses British pubs.',
-    voice: 'Dry British wit. Uses "quite", "rather", "brilliant", "bloody". Understates everything. Short, punchy comments. Occasional sarcasm that reads as sincere. Very British humor.',
+    background: 'British financial analyst in Yeouido. Dry humor. Hikes Bukhansan on weekends. Misses proper pubs.',
+    voice: 'Dry British wit. "quite", "rather", "brilliant", "fair enough". Understatement. Concise. Occasional sarcasm.',
+    preferredCategories: ['jobs', 'realestate', 'free'],
   },
   yuki_jp: {
     name: 'Yuki',
-    background: 'Japanese game designer. K-drama fan before moving here. Finds the cultural similarities and surprising differences between Japan and Korea fascinating. Works at a small game studio in Mapo.',
-    voice: 'Enthusiastic and warm. Uses emojis occasionally (not excessively). Comparisons to Japan are natural. Polite but casual. Gets genuinely excited about K-culture. Uses "omg" and "!!" sometimes.',
+    background: 'Japanese game designer. K-drama fan before Korea. Finds cultural similarities/differences fascinating. Works in Mapo.',
+    voice: 'Enthusiastic and warm. Moderate emojis. Japan comparisons feel natural. "omg", "!!" occasionally.',
+    preferredCategories: ['free', 'marketplace', 'info'],
   },
   linh_vn: {
     name: 'Linh',
-    background: 'Vietnamese, running a small food stall in Itaewon. Practical mindset. Knows every bargain spot in Seoul. Been here 4 years. Network of other SE Asian expats. Street-smart.',
-    voice: 'Direct and practical. Gets to the point. Shares tips and real prices. Occasional grammar quirks (natural, not mocking). Uses "actually" a lot. Real talk, no fluff.',
+    background: 'Vietnamese, Itaewon food stall owner. 4 years here. Knows every bargain in Seoul. Street-smart.',
+    voice: 'Direct and practical. Tips and real prices. Gets to the point. "actually" a lot. No fluff.',
+    preferredCategories: ['marketplace', 'free', 'realestate'],
   },
   priya_in: {
     name: 'Priya',
-    background: 'Indian UX designer, works remotely. Does yoga in Itaewon park. Navigating the Korean dating scene as a foreigner. Very observational. Has a blog she sometimes references vaguely.',
-    voice: 'Reflective and storytelling. Detailed observations. Occasionally philosophical. Uses "honestly", "I feel like", "not gonna lie". Sometimes overthinks things and admits it.',
+    background: 'Indian UX designer, fully remote. Yoga in Itaewon park. Very observational. Overthinks and admits it.',
+    voice: 'Reflective storytelling. "honestly", "I feel like", "not gonna lie". Occasionally philosophical.',
+    preferredCategories: ['free', 'info', 'jobs'],
   },
   marcus_us: {
     name: 'Marcus',
-    background: 'Black American English teacher in Busan, music producer on weekends. Navigating being visibly foreign in Korea with humor and honesty. Very real, calls things out but not bitter.',
-    voice: 'Real and honest. Good humor. Doesn\'t sugarcoat. Uses AAVE naturally ("fam", "lowkey", "no cap"). Busan-specific references. Warm but direct.',
+    background: 'Black American teacher in Busan. Music producer side hustle. Real and honest about the expat experience.',
+    voice: 'Real, warm humor. AAVE naturally ("fam", "lowkey", "no cap"). Busan-specific. Doesn\'t sugarcoat.',
+    preferredCategories: ['free', 'jobs', 'info'],
   },
   wei_cn: {
     name: 'Wei',
-    background: 'Chinese PhD student at Yonsei, studying urban economics. Very observational about how Seoul is changing. Gentrification nerd. Travels around Korea on weekends for "field research".',
-    voice: 'Analytical but accessible. Academic background shows but doesn\'t lecture. References patterns and data casually. Curious about "why" things work the way they do.',
+    background: 'Chinese PhD student at Yonsei. Urban economics. Gentrification nerd. Weekend field trips around Korea.',
+    voice: 'Analytical but friendly. References patterns casually. Academic shows but doesn\'t lecture.',
+    preferredCategories: ['realestate', 'info', 'free'],
+  },
+  ramyeon_lord: {
+    name: 'ramyeon_lord',
+    background: 'Australian in Seoul. Self-appointed Korean ramyeon reviewer.편의점 devotee. Moved from Melbourne. Very online humor.',
+    voice: 'Internet-native humor. Tier lists, "W/L" takes. Casual but funny. Australian slang (mate, arvo, heaps). Self-aware about being a "food obsessed expat".',
+    preferredCategories: ['free', 'marketplace', 'info'],
+  },
+  SeoulBound99: {
+    name: 'SeoulBound99',
+    background: 'Canadian, "just one year" turned 4 years. Marketing manager. Permanently confused by Korean bureaucracy but loves it anyway.',
+    voice: 'Relatable and self-aware. Uses "at this point", "genuinely", "it do be like that". Humor about bureaucracy confusion.',
+    preferredCategories: ['free', 'realestate', 'info'],
+  },
+  k_life_unplugged: {
+    name: 'k_life_unplugged',
+    background: 'German engineer turned ESL teacher. Documents chaos of expat life. Analytical German side vs chaotic Korea life.',
+    voice: 'Dry, observational. German precision meeting Korean unpredictability. "interesting", clinical then surprised. Occasional German directness.',
+    preferredCategories: ['jobs', 'free', 'info'],
+  },
+  itaewon_diaries: {
+    name: 'itaewon_diaries',
+    background: 'Brazilian in Seoul. Fashion and food focused. Eternal quest for good coffee. Vibrant social life. Colorful personality.',
+    voice: 'Expressive and warm. "omg", "slay", "not me doing X". Occasional Portuguese words. Fashion and aesthetic references. Enthusiastic.',
+    preferredCategories: ['free', 'marketplace', 'realestate'],
   },
 }
 
-// 카테고리별 주제 풀 (랜덤 선택)
+const ALL_USERNAMES = Object.keys(ALL_PERSONAS)
+
+// ── 카테고리별 주제 풀 (다양성 확보) ──
 const TOPIC_POOL: Record<string, string[]> = {
   free: [
-    // 일상 & 공감
-    'a funny or embarrassing cultural misunderstanding you had in Korea',
-    'something that genuinely surprised you about Korean culture (positive)',
-    'a wholesome random act of kindness you experienced from a stranger in Korea',
-    'your honest unfiltered thoughts on Korean apartment living',
-    'comparing public transportation in Korea vs your home country',
-    'a "only in Korea" moment that happened to you this week',
-    'things you took for granted at home that you miss in Korea',
-    // 유머 & 가벼운 글
-    'a funny story about trying to read Korean menus at a restaurant',
-    'the weirdest thing you\'ve seen or experienced in a Korean convenience store',
-    'your relationship with 배달 apps - funny story or honest review',
-    'a language mix-up or wrong Korean word that caused a hilarious situation',
-    'things foreigners always say in Korea that Koreans must find hilarious',
-    'comparing Korean internet culture to your home country',
-    'the stages of adapting to 빨리빨리 culture - which stage are you?',
-    // 진지한 공감
-    'making Korean friends - is it actually hard? honest thoughts',
-    'how living in Korea changed the way you see your home country',
-    'a tough week in Korea - sharing to vent and hear others\' experiences',
-    'asking for recommendations: what should every expat in Korea try once?',
+    'a funny cultural misunderstanding you had in Korea this week',
+    'something about Korean convenience stores (편의점) that still amazes you',
+    'your honest relationship with the 배달 app ecosystem',
+    'a "only in Korea" moment from your recent daily life',
+    'things you took for granted at home that you now miss in Korea',
+    'how living in Korea changed how you see your home country',
+    'your stages of learning Korean - current status and struggles',
+    'a random act of kindness from a stranger in Korea',
+    'the funniest thing that happened to you while speaking broken Korean',
+    'comparing seasons/weather in Korea vs your home country',
+    'Korean work culture observations (even if you\'re not working there)',
+    'your first 노래방 experience or recent funny karaoke memory',
+    'making Korean friends - honest experience and what worked',
+    'a question or thing that confused you about Korean culture',
+    'your neighborhood in Seoul/Korea and why you chose it',
+    'Korean dating as a foreigner - observations or funny stories',
+    'something you\'ve completely adopted from Korean culture that surprises even you',
+    'a rant about something mildly frustrating (traffic, bureaucracy, noise, etc)',
+    'comparison: Seoul neighborhood life vs your city back home',
+    'a wholesome moment that made you fall more in love with Korea',
+    'your 치맥 story or honest review of the experience',
+    'Korean skincare / beauty culture observations as a foreigner',
+    'the hierarchy/age culture in Korea - your learning curve',
+    'Korean food you were scared to try but now can\'t live without',
+    'asking for recommendations from the community',
+    'a funny story about navigating Korean bureaucracy',
+    'your experience at a Korean hospital or clinic',
+    'public transport observations - things that impress or confuse you',
   ],
   jobs: [
-    'your experience job hunting in Korea as a foreigner - what actually worked',
-    'a day in your Korean workplace - the good parts and the confusing parts',
-    'navigating Korean work culture as a foreigner (hierarchy, work hours, etc)',
-    'freelancing or remote working from Korea - practical tips and experiences',
-    'what industries are actually hiring foreigners in Korea right now?',
-    'your experience at a Korean company vs a foreign company in Korea',
-    'honest advice for foreigners wanting to get an E-7 visa in Korea',
-    'a workplace situation that completely confused you as a foreigner',
-    'side hustles that work well for expats in Korea',
-    'interview tips for Korean companies if you\'re a foreigner',
+    'your job search experience in Korea as a foreigner - honest review',
+    'what a typical work day looks like at a Korean company',
+    'the pros and cons of working at a Korean company vs foreign company',
+    'your experience getting an E-7 visa or work visa - the real process',
+    'freelancing from Korea - taxes, clients, practical tips',
+    'industries where foreigners are actually finding jobs in Korea',
+    'remote work from Korea setup and work-life balance reality',
+    'Korean workplace culture shock moments (bowing, hierarchy, overtime)',
+    'a networking tip or experience that actually worked for expats',
+    'side hustles that work well while based in Korea',
+    'your salary negotiation experience in Korea as a foreigner',
+    'things nobody tells you about teaching English in Korea',
+    'LinkedIn vs Korean job boards - which actually works for foreigners',
+    'working with Korean colleagues - communication tips from experience',
+    'a wild or funny work story from your Korean workplace',
+    'career development in Korea - growing professionally as a foreigner',
   ],
   realestate: [
-    'your apartment hunting experience as a foreigner - what you learned',
-    'asking the community for advice: best neighborhoods for foreigners in Seoul?',
-    'a story about dealing with a landlord or agent - good or bad',
-    'explaining the 전세 system to someone who just arrived (confused yourself at first)',
-    'comparing life in different Seoul neighborhoods after living in a few',
-    'tips for negotiating rent when you\'re a foreigner',
-    'honest review of living in 고시원 or 오피스텔 vs regular apartment',
-    'how to find a foreigner-friendly real estate agent in Korea',
+    'your apartment search journey as a foreigner - what you learned',
+    'best neighborhoods in Seoul for expats under a specific budget',
+    'the 전세 vs 월세 decision - what I chose and why',
+    'dealing with Korean landlords - your experience (good or bad)',
+    'tips for finding a room without speaking Korean fluently',
+    'honest review of living in 고시원, 오피스텔, or regular 아파트',
+    'things to check before signing a lease in Korea as a foreigner',
+    'negotiating rent in Korea - what tactics worked',
+    'area comparison: Mapo vs Mapo, or comparing two neighborhoods you\'ve lived',
+    'moving to Korea: temporary accommodation tips for the first month',
+    'the foreigner-friendly real estate agent question - how to find one',
+    'a landlord or agent story that taught you something important',
   ],
   marketplace: [
-    'selling something before leaving Korea or moving apartments',
-    'looking for a specific second-hand item',
-    'tips and funny stories from using 당근마켓 as a foreigner',
-    'best spots for second-hand shopping in Korea beyond apps',
+    'selling items before leaving Korea - pricing and platform tips',
+    'looking for a specific second-hand item (electronics, furniture, etc)',
+    'your 당근마켓 (Daangn) experience as a foreigner - tips and funny stories',
+    'comparing second-hand platforms: Daangn vs 번개장터 vs 중고나라',
+    'great deals you found or where to look for specific things',
+    'selling strategy: what sells fast on Korean second-hand apps',
+    'a trade meeting story that was awkward or funny',
+    'buying or selling electronics second-hand in Korea - what to know',
   ],
   info: [
-    'step by step: what I wish I knew before renewing my ARC',
-    'opening a Korean bank account as a foreigner - what actually worked in 2026',
-    'navigating Korean healthcare as a foreigner - tips from experience',
-    'useful apps every foreigner in Korea should have (from experience)',
-    'how I sorted out my health insurance as a foreigner in Korea',
-    'public transport tips that took me too long to figure out',
+    'step-by-step: renewing your ARC in 2026 - what changed',
+    'opening a Korean bank account - which bank and how (from experience)',
+    'Korean health insurance as a foreigner - what you actually paid',
+    'useful apps every foreigner in Korea should know about',
+    'navigating Korean tax filing as a foreign resident',
+    'getting a Korean driver\'s license from a foreign one - process',
+    'Korean public transport tips that took too long to figure out',
+    'where to get official documents translated/notarized in Korea',
+    'practical tips for sending money home from Korea',
+    'the foreigners\' survival guide to Korean healthcare visits',
   ],
 }
 
-async function callGroq(systemPrompt: string, userPrompt: string): Promise<string | null> {
+async function callGroq(system: string, user: string): Promise<string | null> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) return null
   try {
@@ -146,19 +205,17 @@ async function callGroq(systemPrompt: string, userPrompt: string): Promise<strin
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
+          { role: 'system', content: system },
+          { role: 'user', content: user },
         ],
         temperature: 0.93,
-        max_tokens: 750,
+        max_tokens: 800,
       }),
     })
     if (!res.ok) return null
     const data = await res.json()
     return data?.choices?.[0]?.message?.content ?? null
-  } catch {
-    return null
-  }
+  } catch { return null }
 }
 
 export async function POST(req: NextRequest) {
@@ -168,52 +225,47 @@ export async function POST(req: NextRequest) {
 
   const db = getAdminSupabase()
 
-  // 가중치 기반 카테고리 선택
+  // 카테고리 선택 (가중치)
   const catSlug = weightedRandomCategory()
   const { data: cat } = await db.from('categories').select('id').eq('slug', catSlug).single()
-  if (!cat) {
-    return NextResponse.json({ error: `Category ${catSlug} not found` }, { status: 400 })
-  }
+  if (!cat) return NextResponse.json({ error: `Category ${catSlug} not found` }, { status: 400 })
 
-  // 랜덤 페르소나 선택
-  const username = PERSONA_USERNAMES[Math.floor(Math.random() * PERSONA_USERNAMES.length)]
+  // 해당 카테고리를 선호하는 페르소나 중에서 우선 선택
+  const preferredForCat = ALL_USERNAMES.filter(u => ALL_PERSONAS[u].preferredCategories?.includes(catSlug))
+  const pool = preferredForCat.length >= 3 ? preferredForCat : ALL_USERNAMES
+  const username = pool[Math.floor(Math.random() * pool.length)]
+
   const { data: profile } = await db.from('profiles').select('id, display_name').eq('username', username).single()
-  if (!profile) {
-    return NextResponse.json({ error: `Persona ${username} not found. Run /api/seed first.` }, { status: 400 })
-  }
-  const p = profile as { id: string; display_name: string }
-  const persona = PERSONA_DETAILS[username] ?? { name: p.display_name, background: 'foreigner in Korea', voice: 'casual' }
+  if (!profile) return NextResponse.json({ error: `Persona ${username} not found. Run /api/seed first.` }, { status: 400 })
 
-  // 카테고리에서 랜덤 주제 선택
+  const p = profile as { id: string; display_name: string }
+  const persona = ALL_PERSONAS[username]
+
+  // 주제 선택
   const topics = TOPIC_POOL[catSlug] ?? TOPIC_POOL.free
   const topic = topics[Math.floor(Math.random() * topics.length)]
+  const isHumor = catSlug === 'free' && Math.random() < 0.35
 
-  // Community 게시판은 40% 확률로 유머/가벼운 톤
-  const isHumor = catSlug === 'free' && Math.random() < 0.4
+  const systemPrompt = `You are ${persona.name}, a foreigner living in Korea writing a community forum post.
 
-  const systemPrompt = `You are ${persona.name}, a real foreigner living in Korea posting on an expat community forum.
+BACKGROUND: ${persona.background}
+WRITING VOICE: ${persona.voice}
 
-YOUR BACKGROUND: ${persona.background}
-YOUR WRITING VOICE: ${persona.voice}
-
-STRICT RULES — break these and the post will be deleted:
-1. Sound like a REAL HUMAN, not an AI. Forbidden phrases: "In conclusion", "It's worth noting", "delve into", "as a foreigner navigating", "tapestry", "bustling".
-2. NEVER include personal contact info: no emails, Instagram handles, KakaoTalk IDs, phone numbers, WeChat, Line.
-3. NEVER give specific legal, visa, medical, or financial advice as fact. Use "I think", "from my experience", "not sure if this is universal".
+HARD RULES — follow all of these:
+1. Write like a REAL HUMAN. Banned AI phrases: "In conclusion", "It's worth noting", "delve", "navigate", "as a foreigner navigating", "tapestry", "bustling", "it's important to note".
+2. NEVER include personal contact info. No emails, no Instagram handles, no phone numbers, no KakaoTalk IDs, no Discord tags.
+3. Uncertain facts must be hedged. Use "I think", "from my experience", "someone correct me if I'm wrong", "not 100% sure".
 4. No hashtags. No "Hope this helps!" endings.
-5. Mix in Korean words naturally where they fit (치맥, 편의점, 고시원, 전세, 아파트, 출입국, etc).
-6. Vary sentence length — some long, some very short. Include one awkward or self-aware moment.
-${isHumor ? '7. Make it genuinely funny and relatable. Reddit-energy. Light roast of yourself or the situation.' : '7. Be genuine and real. Can be funny but doesn\'t have to be.'}
+5. Korean words are welcome where natural: 치맥, 편의점, 전세, 고시원, 아파트, 출입국, 아이고, etc.
+6. Mix short and long sentences. Include one imperfect or self-aware moment.
+7. Post length: 150-300 words of actual content.
+${isHumor ? '8. Humor mode: funny, relatable, Reddit/community energy. Light self-roast OK.' : ''}
 
-FORMAT: Respond ONLY with valid JSON (no markdown fences):
-{"title": "post title (genuine, not clickbait)", "content": "<p>content using p, strong, br tags only</p>"}`
+RESPOND with valid JSON only (no markdown):
+{"title": "natural post title", "content": "<p>HTML content with p, strong, br tags</p>"}`
 
-  const userPrompt = `Write a forum post about: ${topic}`
-
-  const raw = await callGroq(systemPrompt, userPrompt)
-  if (!raw) {
-    return NextResponse.json({ error: 'Groq generation failed. Check GROQ_API_KEY.' }, { status: 500 })
-  }
+  const raw = await callGroq(systemPrompt, `Write a community post about: ${topic}`)
+  if (!raw) return NextResponse.json({ error: 'Groq call failed' }, { status: 500 })
 
   let generated: { title: string; content: string } | null = null
   try {
@@ -222,7 +274,7 @@ FORMAT: Respond ONLY with valid JSON (no markdown fences):
   } catch { /* ignore */ }
 
   if (!generated?.title || !generated?.content) {
-    return NextResponse.json({ error: 'Failed to parse Groq response', raw: raw.slice(0, 200) }, { status: 500 })
+    return NextResponse.json({ error: 'Parse failed', raw: raw.slice(0, 300) }, { status: 500 })
   }
 
   const { data: inserted, error } = await db.from('posts').insert({
@@ -231,21 +283,13 @@ FORMAT: Respond ONLY with valid JSON (no markdown fences):
     author_id: p.id,
     category_id: (cat as { id: number }).id,
     status: 'published',
-    views_count: Math.floor(Math.random() * 12) + 1,
+    views_count: Math.floor(Math.random() * 15) + 1,
   }).select('id').single()
 
-  if (error || !inserted) {
-    return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 })
-  }
+  if (error || !inserted) return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 })
 
   return NextResponse.json({
     success: true,
-    post: {
-      id: (inserted as { id: string }).id,
-      title: generated.title,
-      author: p.display_name,
-      category: catSlug,
-      humor_mode: isHumor,
-    },
+    post: { id: (inserted as { id: string }).id, title: generated.title, author: username, category: catSlug },
   })
 }

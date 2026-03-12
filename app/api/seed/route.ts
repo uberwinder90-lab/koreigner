@@ -9,6 +9,7 @@ function checkSecret(req: NextRequest) {
 
 // ─── Persona definitions ───
 const PERSONAS = [
+  // 기존 8명
   { email: 'jake.miller.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'jake_usa', display_name: 'Jake Miller', nationality: 'American', bio: 'Software engineer from Austin, TX. Living in Gangnam since 2022.' },
   { email: 'sophie.martin.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'sophie_fr', display_name: 'Sophie Martin', nationality: 'French', bio: 'French teacher at Hongik University. Loves Korean street food.' },
   { email: 'alex.chen.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'alex_hk', display_name: 'Alex Chen', nationality: 'British', bio: 'Financial analyst. Moved from London to Seoul for work.' },
@@ -17,6 +18,11 @@ const PERSONAS = [
   { email: 'priya.sharma.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'priya_in', display_name: 'Priya Sharma', nationality: 'Indian', bio: 'UX designer, remote worker. Yoga + kimchi = perfect life.' },
   { email: 'marcus.johnson.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'marcus_us', display_name: 'Marcus Johnson', nationality: 'American', bio: 'English teacher in Busan. K-hip hop enthusiast.' },
   { email: 'chen.wei.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'wei_cn', display_name: 'Wei Chen', nationality: 'Chinese', bio: 'PhD student at Yonsei. Researching urban economics.' },
+  // 인터넷 닉네임 스타일 4명 추가
+  { email: 'seoul.ramyeon.lord@seed.koreigner.com', password: 'SeedPass!2026', username: 'ramyeon_lord', display_name: 'ramyeon_lord', nationality: 'Australian', bio: 'Moved from Melbourne. On a personal mission to eat every ramyeon in Korea. 편의점 tier list coming soon.' },
+  { email: 'seoulbound.forever@seed.koreigner.com', password: 'SeedPass!2026', username: 'SeoulBound99', display_name: 'SeoulBound99', nationality: 'Canadian', bio: 'Overstayed my "just 1 year" plan by 3 years. Marketing manager. Permanently confused by Korean bureaucracy.' },
+  { email: 'k.life.unplugged@seed.koreigner.com', password: 'SeedPass!2026', username: 'k_life_unplugged', display_name: 'k_life_unplugged', nationality: 'German', bio: 'Engineer turned ESL teacher. Documenting the chaos of expat life in Korea, unfiltered.' },
+  { email: 'itaewon.diaries.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'itaewon_diaries', display_name: 'itaewon_diaries', nationality: 'Brazilian', bio: 'Brazilian in Seoul. Fashion, food, and the eternal quest for good coffee that isn\'t 아아.' },
 ]
 
 // ─── Seed posts (30 total, 6 per category) ───
