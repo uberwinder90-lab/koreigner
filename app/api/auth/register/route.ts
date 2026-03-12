@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, username, displayName, code } = await request.json()
 
-    if (!email || !password || !username || !displayName || !code) {
+    if (!email || !password || !username || !displayName) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 })
     }
     if (password.length < 8) {
@@ -26,21 +26,23 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServiceClient()
 
-    // 이메일 인증코드 확인
-    const { data: verData } = await supabase
-      .from('email_verifications')
-      .select('*')
-      .eq('email', email)
-      .eq('code', code)
-      .single()
+    // 이메일 인증코드 확인 — 'direct'이면 건너뜀
+    if (code && code !== 'direct') {
+      const { data: verData } = await supabase
+        .from('email_verifications')
+        .select('*')
+        .eq('email', email)
+        .eq('code', code)
+        .single()
 
-    const verification = verData as unknown as VerificationRow | null
+      const verification = verData as unknown as VerificationRow | null
 
-    if (!verification) {
-      return NextResponse.json({ error: 'Invalid verification code.' }, { status: 400 })
-    }
-    if (new Date(verification.expires_at) < new Date()) {
-      return NextResponse.json({ error: 'Verification code has expired.' }, { status: 400 })
+      if (!verification) {
+        return NextResponse.json({ error: 'Invalid verification code.' }, { status: 400 })
+      }
+      if (new Date(verification.expires_at) < new Date()) {
+        return NextResponse.json({ error: 'Verification code has expired.' }, { status: 400 })
+      }
     }
 
     // 유저네임 중복 확인
@@ -52,6 +54,13 @@ export async function POST(request: NextRequest) {
 
     if (existingUsername) {
       return NextResponse.json({ error: 'Username already taken.' }, { status: 409 })
+    }
+
+    // 이메일 중복 확인
+    const { data: existingUsers } = await supabase.auth.admin.listUsers()
+    const emailTaken = existingUsers?.users?.some(u => u.email === email)
+    if (emailTaken) {
+      return NextResponse.json({ error: 'Email already registered.' }, { status: 409 })
     }
 
     // Supabase Auth 계정 생성
@@ -79,7 +88,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create profile.' }, { status: 500 })
     }
 
-    await supabase.from('email_verifications').delete().eq('email', email)
+    // 인증코드 정리 (있을 경우)
+    if (code && code !== 'direct') {
+      await supabase.from('email_verifications').delete().eq('email', email)
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

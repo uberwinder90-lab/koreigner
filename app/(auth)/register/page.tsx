@@ -73,19 +73,6 @@ export default function RegisterPage() {
     if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
     setLoading(true)
-    const supabase = createClient()
-    // Direct Supabase signup — no email verification step needed
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: displayName } },
-    })
-    if (signUpError || !signUpData.user) {
-      setError(signUpError?.message ?? 'Registration failed.')
-      setLoading(false)
-      return
-    }
-    // Create profile
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -93,7 +80,7 @@ export default function RegisterPage() {
     })
     const data = await res.json()
     setLoading(false)
-    if (!res.ok) { setError(data.error ?? 'Profile creation failed.'); return }
+    if (!res.ok) { setError(data.error ?? 'Registration failed.'); return }
     router.push('/login?registered=1')
   }
 
