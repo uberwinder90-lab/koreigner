@@ -363,7 +363,11 @@ export default function SubmitForm({ categories, editPost }: Props) {
             <select value={categoryId} onChange={e => setCategoryId(e.target.value ? Number(e.target.value) : '')}
               className="input-field py-1.5 text-sm font-semibold" required>
               <option value="">{t.chooseCommunity}</option>
-              {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+              {categories.map(cat => {
+                // Use i18n name when available (shows Community/House/Information based on lang)
+                const label = (t as Record<string, string>)[cat.slug] ?? cat.name
+                return <option key={cat.id} value={cat.id}>{label}</option>
+              })}
             </select>
           </div>
         </div>

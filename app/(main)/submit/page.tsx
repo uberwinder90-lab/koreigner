@@ -18,7 +18,23 @@ export default async function SubmitPage({ searchParams }: Props) {
 
   if (!user) redirect('/login?next=/submit')
 
-  const { data: categories } = await supabase.from('categories').select('*').order('name')
+  // Only show the 5 canonical categories (filter out any old/legacy DB entries)
+  const VALID_SLUGS = ['free', 'jobs', 'realestate', 'marketplace', 'info']
+  const { data: rawCats } = await supabase
+    .from('categories')
+    .select('*')
+    .in('slug', VALID_SLUGS)
+    .order('id')
+
+  // Fallback: if DB not yet migrated, use hardcoded list so the form always works
+  const FALLBACK_CATEGORIES = [
+    { id: 1, name: 'Community',   slug: 'free' },
+    { id: 2, name: 'Jobs',        slug: 'jobs' },
+    { id: 3, name: 'House',       slug: 'realestate' },
+    { id: 4, name: 'Marketplace', slug: 'marketplace' },
+    { id: 5, name: 'Information', slug: 'info' },
+  ]
+  const categories = (rawCats && rawCats.length > 0) ? rawCats : FALLBACK_CATEGORIES
 
   let editPost = null
   if (edit) {

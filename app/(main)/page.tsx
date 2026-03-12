@@ -17,14 +17,14 @@ interface PostCardPost {
   comments: { count: number }[]
 }
 
-interface SearchParams { tab?: string; category?: string; page?: string }
+interface SearchParams { tab?: string; category?: string; page?: string; q?: string }
 interface Props { searchParams: Promise<SearchParams> }
 
 const PER_PAGE = 20
 const NEW_HOURS = 24
 const HOT_VIEWS = 50
 
-async function PostList({ tab, category, page }: { tab: string; category?: string; page: number }) {
+async function PostList({ tab, category, page, q }: { tab: string; category?: string; page: number; q?: string }) {
   const supabase = await createClient()
   const offset = (page - 1) * PER_PAGE
 
@@ -43,6 +43,16 @@ async function PostList({ tab, category, page }: { tab: string; category?: strin
     const { data: cat } = await supabase.from('categories').select('id').eq('slug', category).single()
     const catRow = cat as unknown as { id: number } | null
     if (catRow) query = query.eq('category_id', catRow.id)
+  }
+
+  if (q?.trim()) {
+    // Escape SQL wildcard characters to treat user input as literal text
+    const safe = q.trim()
+      .replace(/\\/g, '\\\\')
+      .replace(/%/g, '\\%')
+      .replace(/_/g, '\\_')
+      .replace(/'/g, "''")
+    query = query.or(`title.ilike.%${safe}%,content.ilike.%${safe}%`)
   }
 
   query = tab === 'best'
@@ -84,14 +94,14 @@ async function PostList({ tab, category, page }: { tab: string; category?: strin
       {totalPages > 1 && (
         <nav className="flex justify-center gap-1.5">
           {page > 1 && (
-            <Link href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${page - 1}`} className="btn-secondary px-3 py-2 text-sm">←</Link>
+            <Link href={`?tab=${tab}${category ? `&category=${category}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&page=${page - 1}`} className="btn-secondary px-3 py-2 text-sm">←</Link>
           )}
           {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
             const p = i + 1
             return (
               <Link
                 key={p}
-                href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${p}`}
+                href={`?tab=${tab}${category ? `&category=${category}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&page=${p}`}
                 className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${p === page ? 'btn-primary' : 'btn-secondary px-0 py-0'}`}
               >
                 {p}
@@ -99,7 +109,7 @@ async function PostList({ tab, category, page }: { tab: string; category?: strin
             )
           })}
           {page < totalPages && (
-            <Link href={`?tab=${tab}${category ? `&category=${category}` : ''}&page=${page + 1}`} className="btn-secondary px-3 py-2 text-sm">→</Link>
+            <Link href={`?tab=${tab}${category ? `&category=${category}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&page=${page + 1}`} className="btn-secondary px-3 py-2 text-sm">→</Link>
           )}
         </nav>
       )}
@@ -108,7 +118,7 @@ async function PostList({ tab, category, page }: { tab: string; category?: strin
 }
 
 export default async function HomePage({ searchParams }: Props) {
-  const { tab = 'new', category, page: pageStr = '1' } = await searchParams
+  const { tab = 'new', category, page: pageStr = '1', q } = await searchParams
   const page = Math.max(1, parseInt(pageStr))
 
   return (
@@ -116,7 +126,7 @@ export default async function HomePage({ searchParams }: Props) {
       <div className="flex gap-7">
         {/* Main */}
         <div className="flex-1 min-w-0">
-          <HomeHeader tab={tab} category={category} />
+          <HomeHeader tab={tab} category={category} q={q} />
 
           <Suspense
             key={`${tab}-${category}-${page}`}
@@ -128,7 +138,7 @@ export default async function HomePage({ searchParams }: Props) {
               </div>
             }
           >
-            <PostList tab={tab} category={category} page={page} />
+            <PostList tab={tab} category={category} page={page} q={q} />
           </Suspense>
         </div>
 

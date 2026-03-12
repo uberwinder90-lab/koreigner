@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import ScrollToTop from '@/components/ui/ScrollToTop'
 import { LangProvider } from '@/lib/i18n'
 
 const inter = Inter({
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <Footer />
+          <ScrollToTop />
         </LangProvider>
       </body>
     </html>

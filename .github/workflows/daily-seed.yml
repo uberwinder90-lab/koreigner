@@ -1,0 +1,30 @@
+name: Daily AI Seed Post
+
+on:
+  schedule:
+    # Run at 9:00 AM UTC = 6:00 PM KST — peak posting time for Korean community
+    - cron: '0 9 * * *'
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  seed-post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post daily AI-generated community content
+        run: |
+          RESPONSE=$(curl -s -o /tmp/seed_response.json -w "%{http_code}" \
+            -X POST "${{ secrets.SITE_URL }}/api/seed-post" \
+            -H "x-seed-secret: ${{ secrets.SEED_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          echo "HTTP Status: $RESPONSE"
+          echo "Response body:"
+          cat /tmp/seed_response.json
+          
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Seed post failed with status $RESPONSE"
+            exit 1
+          fi
+          
+          echo "Seed post succeeded!"

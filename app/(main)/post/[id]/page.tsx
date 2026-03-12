@@ -3,8 +3,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getAdminSupabase } from '@/lib/supabase/admin'
-import { timeAgo, getEmbedHtml } from '@/lib/utils'
+import { getEmbedHtml } from '@/lib/utils'
 import PostActions from './PostActions'
+import PostMeta from './PostMeta'
 import CommentList from '@/components/comment/CommentList'
 
 interface PostAuthor { id: string; username: string; display_name: string; profile_image_url: string | null }
@@ -68,56 +69,56 @@ export default async function PostPage({ params }: Props) {
     <div className="page-container py-6">
       <div className="max-w-3xl mx-auto">
 
-        {/* ── Main post card ── */}
-        <article className="card overflow-hidden mb-4">
-          {/* Post header bar */}
-          <div className="px-4 py-3 flex items-center gap-2 text-xs flex-wrap" style={{ background: 'var(--bg-alt)', borderBottom: '1px solid var(--border)' }}>
-            {/* Community */}
-            {post.categories && (
-              <Link
-                href={`/?category=${post.categories.slug}`}
-                className="flex items-center gap-1.5 font-bold hover:underline"
-                style={{ color: 'var(--text-1)' }}
-              >
-                <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-black"
-                  style={{ background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)' }}>k</div>
-                k/{post.categories.name}
-              </Link>
-            )}
-            <span style={{ color: 'var(--text-4)' }}>•</span>
-            <span style={{ color: 'var(--text-4)' }}>Posted by</span>
-            {author && (
-              <Link href={`/profile/${author.username}`} className="hover:underline font-medium" style={{ color: 'var(--text-3)' }}>
-                u/{author.username}
-              </Link>
-            )}
-            <span style={{ color: 'var(--text-4)' }}>{timeAgo(post.created_at)}</span>
-          </div>
+        {/* Back button + post header meta (client: i18n + timeAgo) */}
+        <PostMeta
+          createdAt={post.created_at}
+          authorUsername={author?.username ?? null}
+          categorySlug={post.categories?.slug ?? null}
+          categoryName={post.categories?.name ?? null}
+        />
 
+        {/* ── Main post card ── */}
+        <article className="card overflow-hidden mt-3 mb-4">
           <div className="p-4 sm:p-6">
             {/* Title */}
-            <h1 className="text-xl sm:text-2xl font-bold leading-snug mb-4" style={{ color: 'var(--text-1)' }}>
+            <h1 className="text-xl sm:text-2xl font-bold leading-snug mb-5" style={{ color: 'var(--text-1)' }}>
               {post.title}
             </h1>
+
+            {/* Author avatar */}
+            {author && (
+              <Link href={`/profile/${author.username}`} className="inline-flex items-center gap-2 mb-4 group">
+                <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0" style={{ background: 'var(--primary-light)' }}>
+                  {author.profile_image_url ? (
+                    <Image src={author.profile_image_url} alt={author.display_name} fill className="object-cover" />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color: 'var(--primary)' }}>
+                      {author.display_name[0]?.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <span className="text-sm font-semibold group-hover:text-[var(--primary)] transition-colors" style={{ color: 'var(--text-2)' }}>
+                  {author.display_name}
+                </span>
+              </Link>
+            )}
 
             {/* Text content */}
             {post.content && (
               <div className="prose-content mb-5" dangerouslySetInnerHTML={{ __html: post.content }} />
             )}
 
-            {/* Media gallery (attachments: Reddit-style large) */}
+            {/* Media gallery */}
             {media.length > 0 && (
-              <div className={`mb-5 space-y-4 ${media.length > 1 ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : ''}`}>
+              <div className={`mb-5 ${media.length > 1 ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'space-y-4'}`}>
                 {media.map(m => {
                   const isVideo = /\.(mp4|webm|ogg)$/i.test(m.file_url)
                   return isVideo ? (
                     <figure key={m.id} className="post-inline-media">
-                      <video src={m.file_url} controls className="w-full rounded-xl max-h-[70vh] object-contain"
-                        style={{ background: '#000' }} />
+                      <video src={m.file_url} controls className="w-full rounded-xl max-h-[70vh] object-contain" style={{ background: '#000' }} />
                     </figure>
                   ) : (
-                    <figure key={m.id} className="post-inline-media relative overflow-hidden rounded-xl w-full"
-                      style={{ background: 'var(--bg-alt)', minHeight: '280px' }}>
+                    <figure key={m.id} className="post-inline-media relative overflow-hidden rounded-xl w-full" style={{ background: 'var(--bg-alt)', minHeight: '280px' }}>
                       <Image src={m.file_url} alt="Post image" fill className="object-contain" sizes="(max-width: 768px) 100vw, 700px" />
                     </figure>
                   )
@@ -139,7 +140,7 @@ export default async function PostPage({ params }: Props) {
               </a>
             ) : null}
 
-            {/* Action bar (Reddit style) */}
+            {/* Action bar */}
             <PostActions
               postId={id}
               authorId={post.author_id}
@@ -161,7 +162,7 @@ export default async function PostPage({ params }: Props) {
                   style={{ color: 'var(--text-3)' }}>
                   <span className="mt-0.5 flex-shrink-0">←</span>
                   <div>
-                    <p className="text-xs mb-0.5" style={{ color: 'var(--text-4)' }}>Previous</p>
+                    <p className="text-xs mb-0.5" style={{ color: 'var(--text-4)' }}>이전글</p>
                     <p className="text-xs font-medium line-clamp-2 group-hover:text-[var(--primary)] transition-colors">
                       {prevPost.title}
                     </p>
@@ -175,7 +176,7 @@ export default async function PostPage({ params }: Props) {
                   className="card p-3 flex items-start gap-2 justify-end text-right hover:border-[var(--primary)] transition-colors group h-full"
                   style={{ color: 'var(--text-3)' }}>
                   <div>
-                    <p className="text-xs mb-0.5" style={{ color: 'var(--text-4)' }}>Next</p>
+                    <p className="text-xs mb-0.5" style={{ color: 'var(--text-4)' }}>다음글</p>
                     <p className="text-xs font-medium line-clamp-2 group-hover:text-[var(--primary)] transition-colors">
                       {nextPost.title}
                     </p>

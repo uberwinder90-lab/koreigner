@@ -1,100 +1,112 @@
 'use client'
 
+import { FormEvent, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Search, ArrowRight } from 'lucide-react'
 import { useLang } from '@/lib/i18n'
 
-interface Category { id: number; name: string; slug: string }
 interface PopularPost { id: string; title: string; views_count: number }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  free:        '💬',
-  jobs:        '💼',
-  realestate:  '🏠',
-  marketplace: '🛒',
-  info:        '📌',
-}
-
 export default function SidebarClient({
-  categories,
   bestPosts,
 }: {
-  categories: Category[]
+  categories?: { id: number; name: string; slug: string }[]
   bestPosts: PopularPost[]
 }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
+  const router = useRouter()
+  const [query, setQuery] = useState('')
+  const [focused, setFocused] = useState(false)
+
+  function onSearch(e: FormEvent) {
+    e.preventDefault()
+    const q = query.trim()
+    if (q) router.push(`/?q=${encodeURIComponent(q)}`)
+  }
 
   return (
     <aside className="space-y-4">
-      {/* Write CTA */}
+
+      {/* ── Hero + Search (unified card) ── */}
       <div
-        className="rounded-2xl p-5 text-white overflow-hidden relative"
-        style={{ background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)' }}
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'linear-gradient(145deg, #1d4ed8 0%, #6d28d9 100%)' }}
       >
-        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20" style={{ background: 'white' }} />
-        <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full opacity-10" style={{ background: 'white' }} />
-        <h3 className="text-base font-bold mb-1 relative">{t.shareStory}</h3>
-        <p className="text-xs opacity-80 mb-4 relative">{t.shareDesc}</p>
-        <Link
-          href="/submit"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-all relative hover:bg-white/30"
-          style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}
-        >
-          ✏️ {t.write}
-        </Link>
-      </div>
+        {/* Title area */}
+        <div className="relative px-5 pt-5 pb-4">
+          {/* Background glow orbs */}
+          <div className="pointer-events-none absolute top-0 right-0 w-32 h-32 rounded-full opacity-[0.15]"
+            style={{ background: 'radial-gradient(circle, #fff 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
+          <div className="pointer-events-none absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-[0.10]"
+            style={{ background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)', transform: 'translate(-30%, 30%)' }} />
 
-      {/* Categories */}
-      <div className="card p-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider mb-3 px-1" style={{ color: 'var(--text-4)' }}>
-          {t.browseTopics}
-        </h3>
-        <ul className="space-y-0.5">
-          <li>
-            <Link
-              href="/"
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[var(--bg-alt)]"
-              style={{ color: 'var(--text-2)' }}
+          <p className="relative mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            Koreigner
+          </p>
+          <h2 className="relative text-lg font-extrabold leading-snug text-white">
+            Korea&apos;s #1 Community<br />for Foreigners
+          </h2>
+        </div>
+
+        {/* Search area — white/frosted bottom panel */}
+        <div className="px-5 pb-5">
+          <form onSubmit={onSearch}>
+            <div
+              className="flex items-center gap-2 rounded-xl px-3 transition-all duration-200"
+              style={{
+                background: focused ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.14)',
+                border: focused ? '1.5px solid rgba(255,255,255,0.55)' : '1.5px solid rgba(255,255,255,0.22)',
+              }}
             >
-              <span>🌏</span>
-              <span className="font-medium">{t.allPosts}</span>
-            </Link>
-          </li>
-          {categories.map(cat => (
-            <li key={cat.id}>
-              <Link
-                href={`/?category=${cat.slug}`}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[var(--bg-alt)] hover:text-[var(--primary)]"
-                style={{ color: 'var(--text-2)' }}
+              <Search className="h-4 w-4 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.55)' }} />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                placeholder={lang === 'ko' ? '검색어를 입력하세요' : 'Search posts…'}
+                className="h-11 flex-1 bg-transparent text-sm outline-none placeholder:opacity-50"
+                style={{ color: '#fff' }}
+              />
+              <button
+                type="submit"
+                disabled={!query.trim()}
+                className="flex-shrink-0 rounded-lg p-1.5 transition-all duration-150 disabled:opacity-30 hover:bg-white/20"
+                aria-label="Search"
               >
-                <span>{CATEGORY_ICONS[cat.slug] ?? '📌'}</span>
-                <span>{cat.name}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+                <ArrowRight className="h-4 w-4 text-white" />
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
-      {/* Trending */}
+      {/* ── Trending posts ── */}
       {bestPosts.length > 0 && (
         <div className="card p-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider mb-3 px-1" style={{ color: 'var(--text-4)' }}>
+          <h3 className="mb-3 px-1 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-4)' }}>
             {t.trending}
           </h3>
           <ul className="space-y-2">
             {bestPosts.map((post, i) => (
               <li key={post.id}>
-                <Link href={`/post/${post.id}`} className="flex gap-2.5 group hover:text-[var(--primary)] transition-colors">
+                <Link href={`/post/${post.id}`} className="flex gap-2.5 group">
                   <span
-                    className="flex-shrink-0 w-5 h-5 rounded text-xs font-bold flex items-center justify-center mt-0.5"
-                    style={{ background: i === 0 ? '#fef3c7' : 'var(--bg-alt)', color: i === 0 ? '#92400e' : 'var(--text-4)' }}
+                    className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-xs font-bold"
+                    style={{
+                      background: i === 0 ? '#fef3c7' : 'var(--bg-alt)',
+                      color: i === 0 ? '#92400e' : 'var(--text-4)',
+                    }}
                   >
                     {i + 1}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium line-clamp-2 leading-relaxed transition-colors" style={{ color: 'var(--text-2)' }}>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-xs font-medium leading-relaxed transition-colors group-hover:text-[var(--primary)]"
+                      style={{ color: 'var(--text-2)' }}>
                       {post.title}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-4)' }}>
+                    <p className="mt-0.5 text-xs" style={{ color: 'var(--text-4)' }}>
                       {post.views_count} {t.views}
                     </p>
                   </div>
@@ -105,9 +117,9 @@ export default function SidebarClient({
         </div>
       )}
 
-      {/* Community info */}
+      {/* ── Community stats ── */}
       <div className="card p-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider mb-3 px-1" style={{ color: 'var(--text-4)' }}>
+        <h3 className="mb-3 px-1 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-4)' }}>
           {t.communityInfo}
         </h3>
         <div className="space-y-2 text-xs" style={{ color: 'var(--text-3)' }}>
