@@ -5,161 +5,163 @@ function checkSecret(req: NextRequest) {
   return req.headers.get('x-seed-secret') === process.env.SEED_SECRET
 }
 
-const PERSONA_USERNAMES = [
-  'jake_usa', 'sophie_fr', 'alex_hk', 'yuki_jp',
-  'linh_vn', 'priya_in', 'marcus_us', 'wei_cn',
-]
-
+// 페르소나별 댓글 목소리 (20명)
 const PERSONA_VOICE: Record<string, string> = {
-  jake_usa:  'Casual American. Short sentences. Uses "lol", "honestly", "ngl", "tbh". Conversational.',
-  sophie_fr: 'Warm, thoughtful. Slightly formal. Sometimes mentions French comparison. Genuine.',
-  alex_hk:   'Dry British humor. Concise. Understatement. Uses "quite", "rather", "fair point".',
-  yuki_jp:   'Enthusiastic, warm. Occasional emojis. Compares to Japan naturally.',
-  linh_vn:   'Direct, practical. Gets to the point. Shares personal experience tips.',
-  priya_in:  'Observational, storytelling style. Reflective. Uses "honestly" a lot.',
-  marcus_us: 'Real and honest. Warm humor. Direct. Uses AAVE naturally.',
-  wei_cn:    'Analytical but friendly. References observations or patterns casually.',
+  jake_usa:          'Casual American. Short. Uses "ngl", "tbh", "honestly". Doesn\'t overthink.',
+  sophie_fr:         'Warm and thoughtful. Real. Genuine. Occasionally adds a personal connection.',
+  alex_hk:           'Dry British wit. Concise. Slight sarcasm that reads as sincere.',
+  yuki_jp:           'Enthusiastic and genuinely curious. Compares to Japan sometimes. Warm.',
+  linh_vn:           'Blunt and practical. Gets to the point. Real prices or tips when relevant.',
+  priya_in:          'Reflective. "Honestly", "I feel like". Thoughtful, sometimes overthinks.',
+  marcus_us:         'Real and warm. Doesn\'t sugarcoat. Friendly but direct.',
+  wei_cn:            'Analytical but accessible. Notices patterns. Brief.',
+  tom_wilson:        'Straightforward. Casual. Short. "for real tho".',
+  emma_au:           'Dry Australian humor. Self-aware. "heaps", "no worries".',
+  dmitri_ru:         'Concise and observational. Occasionally wry.',
+  sara_kA:           'Self-aware humor about being between cultures. Warm.',
+  ramyeon_lord:      'Internet-native. Tier list energy. Casual and funny.',
+  SeoulBound99:      'Relatable. "at this point", "genuinely". Humor about Korea chaos.',
+  k_life_unplugged:  'Dry, slightly clinical then surprised. German directness.',
+  itaewon_diaries:   'Expressive. "omg", enthusiastic. Fashion/aesthetic references.',
+  noodles_in_seoul:  'Food-obsessed but real about expat life. Warm opinions.',
+  expat_in_progress: 'Openly confused sometimes. Self-deprecating. "help?" energy.',
+  hongdae_hannah:    'Creative and observational. Notices small details. Warm.',
+  korea_by_accident: 'Wry "how did I end up here" energy. Warm and domestic.',
 }
 
-async function generateComment(
-  postTitle: string,
-  postContent: string,
-  commenterUsername: string,
-): Promise<string | null> {
+const ALL_USERNAMES = Object.keys(PERSONA_VOICE)
+
+const COMMENT_TYPES = [
+  'agree and add something short from your own experience',
+  'ask a genuine follow-up question',
+  'offer a different perspective or counter-experience',
+  'give a quick practical tip related to the post',
+  'a short funny or relatable reaction',
+]
+
+async function callGroq(system: string, user: string): Promise<string | null> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) return null
-
-  const voice = PERSONA_VOICE[commenterUsername] ?? 'casual and natural'
-  const cleanContent = postContent.replace(/<[^>]+>/g, '').slice(0, 600)
-
-  // 댓글 유형을 랜덤으로 선택하여 다양성 확보
-  const commentTypes = [
-    'agree and add your own similar experience',
-    'ask a genuine follow-up question about something in the post',
-    'share a different perspective or counter-experience (friendly, not argumentative)',
-    'give a helpful tip or info that adds to what was posted',
-    'relate with humor — a funny reaction or meme-energy reply',
-  ]
-  const commentType = commentTypes[Math.floor(Math.random() * commentTypes.length)]
-
-  const prompt = `You are a foreigner living in Korea replying to a community forum post.
-
-Your writing voice: ${voice}
-
-The post you're replying to:
-Title: "${postTitle}"
-Content: "${cleanContent}"
-
-Write a SHORT, NATURAL comment (1-4 sentences). Your task: ${commentType}
-
-STRICT RULES:
-- Sound like a REAL HUMAN. No "Great post!", no "I completely agree with your perspective", no AI phrases.
-- NEVER include contact info (no email, Instagram, phone, KakaoTalk ID).
-- NEVER state false facts as truth. Use hedging when uncertain ("I think", "from what I heard").
-- No hashtags.
-- Be relevant to the actual post content above.
-
-Reply with ONLY the comment text. No quotes. No labels. Just the comment.`
-
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.92,
-        max_tokens: 180,
+        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+        temperature: 0.96,
+        max_tokens: 200,
       }),
     })
     if (!res.ok) return null
     const data = await res.json()
     return data?.choices?.[0]?.message?.content?.trim() ?? null
-  } catch {
-    return null
-  }
+  } catch { return null }
+}
+
+async function postComment(
+  db: ReturnType<typeof import('@/lib/supabase/admin').getAdminSupabase>,
+  postId: string,
+  authorId: string,
+  content: string
+) {
+  const minutesAgo = Math.floor(Math.random() * 120) + 5
+  const createdAt = new Date(Date.now() - minutesAgo * 60 * 1000).toISOString()
+  const { error } = await db.from('comments').insert({
+    post_id: postId,
+    author_id: authorId,
+    content,
+    created_at: createdAt,
+  })
+  return !error
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkSecret(req)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (!checkSecret(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const db = getAdminSupabase()
 
-  // 최근 4시간 내의 게시글 찾기 (없으면 24시간으로 확장)
-  let targetPost: { id: string; title: string; content: string | null; author_id: string } | null = null
-
+  // 최근 게시글 찾기 (4시간 → 12시간 → 24시간)
+  let recentPost: { id: string; author_id: string; title: string; content: string } | null = null
   for (const hours of [4, 12, 24]) {
-    const since = new Date(Date.now() - hours * 3600000).toISOString()
-    const { data: posts } = await db
+    const since = new Date(Date.now() - hours * 3600 * 1000).toISOString()
+    const { data } = await db
       .from('posts')
-      .select('id, title, content, author_id')
-      .eq('status', 'published')
+      .select('id, author_id, title, content')
       .gte('created_at', since)
       .order('created_at', { ascending: false })
-      .limit(8)
-
-    if (posts && posts.length > 0) {
-      // 댓글이 적은 글 우선 선택 (활발한 대화 유도)
-      targetPost = (posts as typeof posts)[Math.floor(Math.random() * Math.min(posts.length, 5))] as typeof targetPost
+      .limit(20)
+    if (data && data.length > 0) {
+      // 댓글이 적은 글 우선
+      const withCount = await Promise.all(
+        data.map(async (p) => {
+          const { count } = await db.from('comments').select('id', { count: 'exact', head: true }).eq('post_id', p.id)
+          return { ...p, commentCount: count ?? 0 }
+        })
+      )
+      withCount.sort((a, b) => a.commentCount - b.commentCount)
+      const least = withCount.slice(0, Math.min(5, withCount.length))
+      recentPost = least[Math.floor(Math.random() * least.length)] as { id: string; author_id: string; title: string; content: string }
       break
     }
   }
 
-  if (!targetPost) {
-    return NextResponse.json({ error: 'No recent posts found to comment on' }, { status: 404 })
+  if (!recentPost) return NextResponse.json({ message: 'No recent posts found' })
+
+  // 게시글당 이번 호출에서 달 댓글 수 결정: 0~3개 (가중치)
+  const commentCountRoll = Math.random()
+  let commentCount: number
+  if (commentCountRoll < 0.25) commentCount = 0
+  else if (commentCountRoll < 0.60) commentCount = 1
+  else if (commentCountRoll < 0.85) commentCount = 2
+  else commentCount = 3
+
+  if (commentCount === 0) {
+    return NextResponse.json({ message: 'Skipped this round (0 comments)' })
   }
 
-  // 글 작성자와 다른 페르소나를 댓글 작성자로 선택
-  const { data: postAuthorProfile } = await db
-    .from('profiles')
-    .select('username')
-    .eq('id', targetPost.author_id)
-    .single()
+  // 게시글 작성자와 다른 페르소나들 선택
+  const { data: authorProfile } = await db.from('profiles').select('username').eq('id', recentPost.author_id).single()
+  const authorUsername = (authorProfile as { username?: string } | null)?.username ?? ''
+  const eligible = ALL_USERNAMES.filter(u => u !== authorUsername)
 
-  const authorUsername = (postAuthorProfile as { username: string } | null)?.username ?? ''
-  const availablePersonas = PERSONA_USERNAMES.filter(u => u !== authorUsername)
-  const commenterUsername = availablePersonas[Math.floor(Math.random() * availablePersonas.length)]
+  const used = new Set<string>()
+  const results: { commenter: string; ok: boolean }[] = []
 
-  const { data: commenter } = await db
-    .from('profiles')
-    .select('id')
-    .eq('username', commenterUsername)
-    .single()
+  for (let i = 0; i < commentCount; i++) {
+    const available = eligible.filter(u => !used.has(u))
+    if (available.length === 0) break
+    const commenter = available[Math.floor(Math.random() * available.length)]
+    used.add(commenter)
 
-  if (!commenter) {
-    return NextResponse.json({ error: `Commenter ${commenterUsername} not found. Run /api/seed first.` }, { status: 400 })
-  }
+    const { data: commenterProfile } = await db.from('profiles').select('id').eq('username', commenter).single()
+    if (!commenterProfile) continue
 
-  const commentText = await generateComment(
-    targetPost.title,
-    targetPost.content ?? '',
-    commenterUsername,
-  )
+    const voice = PERSONA_VOICE[commenter]
+    const commentType = COMMENT_TYPES[Math.floor(Math.random() * COMMENT_TYPES.length)]
+    const postSnippet = recentPost.content.replace(/<[^>]+>/g, '').slice(0, 200)
 
-  if (!commentText) {
-    return NextResponse.json({ error: 'Comment generation failed. Check GROQ_API_KEY.' }, { status: 500 })
-  }
+    const systemPrompt = `You are writing a short comment on a community forum post (like Reddit). You are ${commenter}.
+VOICE: ${voice}
 
-  const { error } = await db.from('comments').insert({
-    post_id: targetPost.id,
-    author_id: (commenter as { id: string }).id,
-    content: commentText,
-    parent_id: null,
-    status: 'published',
-  })
+CRITICAL RULES:
+1. Write ENTIRELY in natural English. Do NOT insert Korean words mid-sentence.
+2. 1-3 sentences MAX. Be concise.
+3. Sound like a real person — not an AI. Banned phrases: "It's worth noting", "I must say", "Great post!", "Absolutely", "Certainly".
+4. No hashtags. No contact info. No sign-off.
+5. Type: ${commentType}`
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const raw = await callGroq(systemPrompt, `Post: "${recentPost.title}" — ${postSnippet}`)
+    if (!raw) continue
+
+    const ok = await postComment(db, recentPost.id, (commenterProfile as { id: string }).id, raw)
+    results.push({ commenter, ok })
   }
 
   return NextResponse.json({
     success: true,
-    comment: {
-      on_post: targetPost.title.slice(0, 60),
-      by: commenterUsername,
-      preview: commentText.slice(0, 100),
-    },
+    post: { id: recentPost.id, title: recentPost.title },
+    commentsAttempted: commentCount,
+    results,
   })
 }
