@@ -9,28 +9,28 @@ function checkSecret(req: NextRequest) {
 
 // ─── Persona definitions ───
 const PERSONAS = [
-  // 기존 8명
-  { email: 'jake.miller.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'jake_usa', display_name: 'Jake Miller', nationality: 'American', bio: 'Software engineer from Austin, TX. Living in Gangnam since 2022.' },
-  { email: 'sophie.martin.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'sophie_fr', display_name: 'Sophie Martin', nationality: 'French', bio: 'French teacher at Hongik University. Loves Korean street food.' },
-  { email: 'alex.chen.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'alex_hk', display_name: 'Alex Chen', nationality: 'British', bio: 'Financial analyst. Moved from London to Seoul for work.' },
-  { email: 'yuki.tanaka.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'yuki_jp', display_name: 'Yuki Tanaka', nationality: 'Japanese', bio: 'Game designer. K-drama fan since forever. Now lives it!' },
-  { email: 'nguyen.linh.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'linh_vn', display_name: 'Linh Nguyen', nationality: 'Vietnamese', bio: 'Running a small food business in Itaewon. Korean food is life.' },
-  { email: 'priya.sharma.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'priya_in', display_name: 'Priya Sharma', nationality: 'Indian', bio: 'UX designer, remote worker. Yoga + kimchi = perfect life.' },
-  { email: 'marcus.johnson.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'marcus_us', display_name: 'Marcus Johnson', nationality: 'American', bio: 'English teacher in Busan. K-hip hop enthusiast.' },
-  { email: 'chen.wei.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'wei_cn', display_name: 'Wei Chen', nationality: 'Chinese', bio: 'PhD student at Yonsei. Researching urban economics.' },
-  // 인터넷 닉네임 스타일 + 추가 실명 스타일 페르소나
-  { email: 'seoul.ramyeon.lord@seed.koreigner.com', password: 'SeedPass!2026', username: 'ramyeon_lord', display_name: 'ramyeon_lord', nationality: 'Australian', bio: 'Moved from Melbourne. On a personal mission to eat every instant noodle brand in Korea. Convenience store devotee.' },
-  { email: 'seoulbound.forever@seed.koreigner.com', password: 'SeedPass!2026', username: 'SeoulBound99', display_name: 'SeoulBound99', nationality: 'Canadian', bio: 'Overstayed my "just 1 year" plan by 3 years. Marketing manager. Permanently confused by Korean bureaucracy.' },
-  { email: 'k.life.unplugged@seed.koreigner.com', password: 'SeedPass!2026', username: 'k_life_unplugged', display_name: 'k_life_unplugged', nationality: 'German', bio: 'Engineer turned ESL teacher. Documenting the chaos of expat life in Korea, unfiltered.' },
-  { email: 'itaewon.diaries.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'itaewon_diaries', display_name: 'itaewon_diaries', nationality: 'Brazilian', bio: 'Brazilian in Seoul. Fashion, food, and finding good coffee. Itaewon local.' },
-  { email: 'tom.wilson.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'tom_wilson', display_name: 'Tom Wilson', nationality: 'American', bio: 'Marketing at a Korean company. Chicago guy. 2 years in Mapo. Still figuring it all out.' },
-  { email: 'emma.blackwood.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'emma_au', display_name: 'Emma Blackwood', nationality: 'Australian', bio: 'Copywriter, working remote. Came for a year, stayed for three. Based in Yeonnam-dong.' },
-  { email: 'dmitri.volkov.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'dmitri_ru', display_name: 'Dmitri Volkov', nationality: 'Russian', bio: 'Data scientist at a fintech startup. Moved from Moscow. Quietly fascinated by everything.' },
-  { email: 'sara.kim.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'sara_kA', display_name: 'Sara Kim', nationality: 'Korean-American', bio: 'Korean-American navigating the in-between. Too American for Korea, too Korean for America.' },
-  { email: 'noodles.in.seoul@seed.koreigner.com', password: 'SeedPass!2026', username: 'noodles_in_seoul', display_name: 'noodles_in_seoul', nationality: 'American', bio: 'Came for a food tour. Got a job. Stayed. Food content creator and reluctant expat.' },
-  { email: 'expat.in.progress@seed.koreigner.com', password: 'SeedPass!2026', username: 'expat_in_progress', display_name: 'expat_in_progress', nationality: 'South African', bio: 'Still figuring Korea out one mistake at a time. Based in Sinchon.' },
-  { email: 'hongdae.hannah@seed.koreigner.com', password: 'SeedPass!2026', username: 'hongdae_hannah', display_name: 'hongdae_hannah', nationality: 'British', bio: 'Illustrator from London. Moved for the art scene, stayed for the cheap coffee and great transit.' },
-  { email: 'korea.by.accident@seed.koreigner.com', password: 'SeedPass!2026', username: 'korea_by_accident', display_name: 'korea_by_accident', nationality: 'New Zealander', bio: 'Came for 3 months. Married a Korean. Stayed forever. Now very domestic.' },
+  // idx 0-7: 시드 포스트에서 author_idx로 참조됨 — 순서 유지
+  { email: 'jake.miller.kr@seed.koreigner.com',    password: 'SeedPass!2026', username: 'seouldrifter88',   display_name: 'Jake M.',          bio: 'Software engineer. Austin originally, Gangnam now. 3 years in.' },
+  { email: 'sophie.martin.kr@seed.koreigner.com',  password: 'SeedPass!2026', username: 'fromageseoul',     display_name: 'Sophie',           bio: 'French teacher at Hongik University. Perpetually amazed by Korean street food.' },
+  { email: 'alex.chen.kr@seed.koreigner.com',      password: 'SeedPass!2026', username: 'propercuppa',      display_name: 'Alex',             bio: 'Finance guy. Moved from London. Still searching for a decent pub in Seoul.' },
+  { email: 'yuki.tanaka.kr@seed.koreigner.com',    password: 'SeedPass!2026', username: 'pixelyuki',        display_name: 'Yuki T.',          bio: 'Game designer. K-drama enthusiast who finally moved here.' },
+  { email: 'nguyen.linh.kr@seed.koreigner.com',    password: 'SeedPass!2026', username: 'pho4seoul',        display_name: 'Linh',             bio: 'Running a food spot in Itaewon. 4 years deep. Know every cheap eat in Seoul.' },
+  { email: 'priya.sharma.kr@seed.koreigner.com',   password: 'SeedPass!2026', username: 'chai2soju',        display_name: 'Priya',            bio: 'UX designer, fully remote. Yoga in the morning, ramyeon at midnight.' },
+  { email: 'marcus.johnson.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'busanbeats',       display_name: 'Marcus',           bio: 'English teacher in Busan. Music producer on weekends. Busan > Seoul, fight me.' },
+  { email: 'chen.wei.kr@seed.koreigner.com',       password: 'SeedPass!2026', username: 'urbanwei',         display_name: 'Wei',              bio: 'PhD candidate at Yonsei, urban economics. Travels everywhere on weekends.' },
+  // idx 8-19: 추가 페르소나
+  { email: 'seoul.ramyeon.lord@seed.koreigner.com', password: 'SeedPass!2026', username: 'ramyeonirl',      display_name: 'ramyeonirl',       bio: 'Melbourne → Seoul. On a mission to try every instant noodle in existence.' },
+  { email: 'seoulbound.forever@seed.koreigner.com', password: 'SeedPass!2026', username: 'seoulbound99',    display_name: 'seoulbound99',     bio: '"Just one year" turned into four. Marketing manager. Permanently bewildered by Korean admin.' },
+  { email: 'k.life.unplugged@seed.koreigner.com',   password: 'SeedPass!2026', username: 'klifediary',      display_name: 'klifediary',       bio: 'German engineer who became an ESL teacher. Documenting every confusing step.' },
+  { email: 'itaewon.diaries.kr@seed.koreigner.com', password: 'SeedPass!2026', username: 'itaewondiary',   display_name: 'itaewondiary',     bio: 'Brazilian in Seoul. Here for fashion, food, and decent espresso.' },
+  { email: 'tom.wilson.kr@seed.koreigner.com',      password: 'SeedPass!2026', username: 'maprotom',        display_name: 'Tom W.',           bio: 'Marketing at a Korean company. Chicago. 2 years in Mapo-gu. Still adjusting.' },
+  { email: 'emma.blackwood.kr@seed.koreigner.com',  password: 'SeedPass!2026', username: 'emlb',            display_name: 'Emma B.',          bio: 'Freelance copywriter, remote. Came for a year. Now on year three. Oops.' },
+  { email: 'dmitri.volkov.kr@seed.koreigner.com',   password: 'SeedPass!2026', username: 'dimakr',          display_name: 'Dima',             bio: 'Data scientist at a Seoul fintech. Moved from Moscow. Perpetually observing.' },
+  { email: 'sara.kim.kr@seed.koreigner.com',         password: 'SeedPass!2026', username: 'twopassports',   display_name: 'Sara K.',          bio: 'Korean-American. Too American for Korea, too Korean for America. Living the paradox.' },
+  { email: 'noodles.in.seoul@seed.koreigner.com',   password: 'SeedPass!2026', username: 'seoulnoodlekid',  display_name: 'seoulnoodlekid',   bio: 'Came for a food tour, got a job, stayed. Food blogger and accidental expat.' },
+  { email: 'expat.in.progress@seed.koreigner.com',  password: 'SeedPass!2026', username: 'stillxpat',       display_name: 'stillxpat',        bio: 'South African in Sinchon. Still figuring Korea out one mistake at a time.' },
+  { email: 'hongdae.hannah@seed.koreigner.com',     password: 'SeedPass!2026', username: 'hannahhd',        display_name: 'Hannah',           bio: 'Illustrator from London. Moved for the art scene. Hongdae local.' },
+  { email: 'korea.by.accident@seed.koreigner.com',  password: 'SeedPass!2026', username: 'accidentalkorean', display_name: 'accidentalkorean', bio: 'Kiwi who came for 3 months, married a Korean, stayed forever. Very domestic now.' },
 ]
 
 // ─── Seed posts (30 total, 6 per category) ───
