@@ -186,9 +186,12 @@ export default function Header() {
               )}
             </div>
           ) : (
-            <div className="hidden sm:flex items-center gap-2">
-              <Link href="/login" className="inline-flex min-h-11 items-center rounded-xl border px-4 text-sm font-medium" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex items-center gap-2">
+              <Link href="/login" className="inline-flex min-h-11 items-center rounded-xl border px-3 sm:px-4 text-sm font-medium" style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}>
                 {t.login}
+              </Link>
+              <Link href="/register" className="hidden sm:inline-flex min-h-11 items-center rounded-xl border px-4 text-sm font-medium" style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}>
+                {t.signup}
               </Link>
             </div>
           )}

@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
-import Link from 'next/link'
+import Link from 'next/link' // used for author/embed links
 import { createClient } from '@/lib/supabase/server'
 import { getAdminSupabase } from '@/lib/supabase/admin'
 import { getEmbedHtml } from '@/lib/utils'
 import PostActions from './PostActions'
 import PostMeta from './PostMeta'
+import PostNav from './PostNav'
 import CommentList from '@/components/comment/CommentList'
 
 interface PostAuthor { id: string; username: string; display_name: string; profile_image_url: string | null }
@@ -153,40 +154,7 @@ export default async function PostPage({ params }: Props) {
         </article>
 
         {/* ── Prev/Next navigation ── */}
-        {(prevPost || nextPost) && (
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              {prevPost ? (
-                <Link href={`/post/${prevPost.id}`}
-                  className="card p-3 flex items-start gap-2 hover:border-[var(--primary)] transition-colors group h-full"
-                  style={{ color: 'var(--text-3)' }}>
-                  <span className="mt-0.5 flex-shrink-0">←</span>
-                  <div>
-                    <p className="text-xs mb-0.5" style={{ color: 'var(--text-4)' }}>이전글</p>
-                    <p className="text-xs font-medium line-clamp-2 group-hover:text-[var(--primary)] transition-colors">
-                      {prevPost.title}
-                    </p>
-                  </div>
-                </Link>
-              ) : null}
-            </div>
-            <div>
-              {nextPost ? (
-                <Link href={`/post/${nextPost.id}`}
-                  className="card p-3 flex items-start gap-2 justify-end text-right hover:border-[var(--primary)] transition-colors group h-full"
-                  style={{ color: 'var(--text-3)' }}>
-                  <div>
-                    <p className="text-xs mb-0.5" style={{ color: 'var(--text-4)' }}>다음글</p>
-                    <p className="text-xs font-medium line-clamp-2 group-hover:text-[var(--primary)] transition-colors">
-                      {nextPost.title}
-                    </p>
-                  </div>
-                  <span className="mt-0.5 flex-shrink-0">→</span>
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        )}
+        <PostNav prevPost={prevPost} nextPost={nextPost} />
 
         {/* ── Comments ── */}
         <div className="card p-5 sm:p-6">

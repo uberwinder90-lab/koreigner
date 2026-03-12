@@ -47,7 +47,7 @@ export default function PostMeta({ createdAt, authorUsername, categorySlug, cate
             >
               k
             </div>
-            {categoryName}
+            {(t as Record<string, string>)[categorySlug] ?? categoryName}
           </Link>
         )}
         <span>•</span>

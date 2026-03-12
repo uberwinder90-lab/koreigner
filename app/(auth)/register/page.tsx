@@ -20,7 +20,6 @@ function GoogleIcon() {
 
 const steps = [
   { id: 'email', label: 'Email' },
-  { id: 'code', label: 'Verify' },
   { id: 'details', label: 'Profile' },
 ] as const
 
@@ -57,17 +56,8 @@ export default function RegisterPage() {
   async function sendCode(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    setLoading(true)
-    const res = await fetch('/api/auth/send-code', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-    const data = await res.json()
-    setLoading(false)
-    if (!res.ok) { setError(data.error ?? 'Failed to send code.'); return }
-    setSuccess('Verification code sent to your email.')
-    setStep('code')
+    // Skip email verification — go directly to profile setup
+    setStep('details')
   }
 
   async function verifyCode(e: React.FormEvent) {
@@ -83,14 +73,27 @@ export default function RegisterPage() {
     if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
     setLoading(true)
+    const supabase = createClient()
+    // Direct Supabase signup — no email verification step needed
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: displayName } },
+    })
+    if (signUpError || !signUpData.user) {
+      setError(signUpError?.message ?? 'Registration failed.')
+      setLoading(false)
+      return
+    }
+    // Create profile
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, username, displayName, code }),
+      body: JSON.stringify({ email, password, username, displayName, code: 'direct' }),
     })
     const data = await res.json()
     setLoading(false)
-    if (!res.ok) { setError(data.error ?? 'Registration failed.'); return }
+    if (!res.ok) { setError(data.error ?? 'Profile creation failed.'); return }
     router.push('/login?registered=1')
   }
 
@@ -211,42 +214,7 @@ export default function RegisterPage() {
             </>
           )}
 
-          {/* Step 2: Code */}
-          {step === 'code' && (
-            <form onSubmit={verifyCode} className="space-y-4">
-              <div className="text-center mb-2">
-                <div
-                  className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-3"
-                  style={{ background: 'var(--primary-light)' }}
-                >
-                  <svg className="w-7 h-7" style={{ color: 'var(--primary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <p className="text-sm" style={{ color: 'var(--text-3)' }}>
-                  Check <strong style={{ color: 'var(--text-2)' }}>{email}</strong>
-                </p>
-              </div>
-              <div>
-                <label className="label text-center block" htmlFor="code">Verification Code</label>
-                <input
-                  id="code" type="text" value={code}
-                  onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="input-field text-center text-3xl tracking-[0.4em] font-bold py-4"
-                  placeholder="000000" maxLength={6} required inputMode="numeric"
-                />
-              </div>
-              <button type="submit" disabled={code.length !== 6} className="btn-primary w-full py-3">
-                Verify Code
-              </button>
-              <button type="button" onClick={() => { setStep('email'); setSuccess(''); setCode('') }}
-                className="btn-secondary w-full py-2.5 text-sm">
-                ← Change Email
-              </button>
-            </form>
-          )}
-
-          {/* Step 3: Details */}
+          {/* Step 2: Details */}
           {step === 'details' && (
             <form onSubmit={register} className="space-y-4">
               <div>

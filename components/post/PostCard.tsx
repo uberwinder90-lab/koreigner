@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Eye, Heart, MessageCircle, Clock3 } from 'lucide-react'
+import { Heart, MessageCircle, Clock3 } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 import { useLang } from '@/lib/i18n'
 
@@ -48,7 +48,7 @@ export default function PostCard({ post, isNew, isBest }: PostCardProps) {
                 className="badge-category min-h-8 hover:opacity-80 transition-opacity"
                 onClick={e => e.stopPropagation()}
               >
-                {post.categories.name}
+                {(t as Record<string, string>)[post.categories.slug] ?? post.categories.name}
               </Link>
             )}
             {isNew && <span className="badge-new">NEW</span>}
@@ -99,16 +99,12 @@ export default function PostCard({ post, isNew, isBest }: PostCardProps) {
 
           <div className="mt-1 flex flex-wrap gap-3 text-xs sm:text-sm" style={{ color: 'var(--text-4)' }}>
             <span className="inline-flex min-h-10 items-center gap-1.5">
-              <Eye className="h-4 w-4" />
-              {post.views_count} {t.views}
-            </span>
-            <span className="inline-flex min-h-10 items-center gap-1.5">
               <MessageCircle className="h-4 w-4" />
-              {commentsCount} {t.comments}
+              {commentsCount}
             </span>
             <span className="inline-flex min-h-10 items-center gap-1.5">
               <Heart className="h-4 w-4" />
-              {likesCount} {t.likes}
+              {likesCount}
             </span>
           </div>
         </div>

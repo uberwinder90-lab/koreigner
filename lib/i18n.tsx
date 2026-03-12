@@ -15,11 +15,11 @@ const T = {
     logout: '로그아웃',
     writePost: '게시글 쓰기',
     // Categories
-    free: 'Community',
+    free: '자유게시판',
     jobs: '구인구직',
-    realestate: 'House',
+    realestate: '부동산',
     marketplace: '중고거래',
-    info: 'Information',
+    info: '정보',
     allPosts: '전체글',
     // Home
     community: '커뮤니티',
@@ -63,6 +63,7 @@ const T = {
     commentPlaceholder: '댓글을 작성하세요… (Markdown 지원)',
     prev: '이전글',
     next: '다음글',
+    noResults: '검색 결과가 없어요',
     // Submit
     createPost: '게시글 작성',
     editPost: '게시글 수정',
@@ -129,8 +130,9 @@ const T = {
     likes: 'Likes',
     addComment: 'Add Comment',
     commentPlaceholder: 'Write a comment… (Markdown supported)',
-    prev: 'Previous',
+    prev: 'Prev',
     next: 'Next',
+    noResults: 'No results found',
     createPost: 'Create Post',
     editPost: 'Edit Post',
     chooseCommunity: 'Choose a community…',
