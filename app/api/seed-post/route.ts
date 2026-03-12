@@ -186,12 +186,15 @@ export async function POST(req: NextRequest) {
   const format = POST_FORMATS[Math.floor(Math.random() * POST_FORMATS.length)]
   const { instruction: lengthInstruction } = getPostLength()
 
-  // 20% 확률로 외국인이 한국어로 작성
-  const writeInKorean = Math.random() < 0.20
+  // 한국어 글: 호출마다 10~15% 사이로 랜덤 확률 적용
+  const koreanProbability = 0.10 + Math.random() * 0.05
+  const writeInKorean = Math.random() < koreanProbability
+  const koreanFluency: 'learner' | 'fluent' = Math.random() < 0.55 ? 'learner' : 'fluent'
 
   const systemPrompt = writeInKorean
-    ? `You are a foreigner living in Korea writing a short post in Korean on a community forum.
-You are not a native Korean speaker — write simple, natural Korean with minor foreigner-style mistakes OK.
+    ? (koreanFluency === 'learner'
+        ? `You are a foreigner living in Korea writing a short post in Korean on a community forum.
+You are not a native Korean speaker — write simple, natural Korean with minor foreigner-style mistakes OK (missing particles, awkward spacing sometimes, simple sentence structures).
 Keep it SHORT (2-5 sentences max). Casual community post tone. No formal language.
 
 PERSONA: ${persona.background}
@@ -204,6 +207,21 @@ CRITICAL RULES:
 
 RESPOND with JSON only:
 {"title": "한국어 제목", "content": "<p>한국어 내용</p>"}`
+        : `You are a foreigner living in Korea writing a short post in Korean on a community forum.
+Your Korean is very good (TOPIK 5-6 level) — natural, fluent, but still with tiny hints of being a non-native sometimes (word choice slightly off once in a while).
+Keep it SHORT (2-6 sentences). Casual community post tone. No formal report style.
+
+PERSONA: ${persona.background}
+
+CRITICAL RULES:
+1. Write ENTIRELY in Korean. Natural spacing and grammar.
+2. Sound like a real person posting on a forum. No textbook tone.
+3. NEVER include contact info. No hashtags. No sign-off.
+4. Topic hint: ${topic}
+
+RESPOND with JSON only:
+{"title": "한국어 제목", "content": "<p>한국어 내용</p>"}`
+      )
     : `You are writing a post for an online expat community forum (like Reddit) for foreigners living in Korea.
 
 PERSONA: ${persona.background}
@@ -247,8 +265,40 @@ RESPOND with JSON only:
 
   if (error || !inserted) return NextResponse.json({ error: error?.message ?? 'Insert failed' }, { status: 500 })
 
+  // 좋아요(페르소나들)도 적당히 랜덤: 0개도 가능
+  const postId = (inserted as { id: string }).id
+  const likeRoll = Math.random()
+  let likesToAdd = 0
+  if (likeRoll < 0.55) likesToAdd = 0
+  else if (likeRoll < 0.85) likesToAdd = Math.floor(Math.random() * 3) + 1 // 1-3
+  else likesToAdd = Math.floor(Math.random() * 6) + 3 // 3-8
+
+  if (likesToAdd > 0) {
+    const { data: likers } = await db.from('profiles').select('id, username').in('username', ALL_USERNAMES)
+    const authorId = (profile as { id: string }).id
+    const eligible = (likers ?? []).filter(p => (p as { id: string }).id !== authorId)
+    // 섞기
+    for (let i = eligible.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[eligible[i], eligible[j]] = [eligible[j], eligible[i]]
+    }
+    const picked = eligible.slice(0, Math.min(likesToAdd, eligible.length))
+    if (picked.length > 0) {
+      await db.from('post_likes').insert(
+        picked.map(p => {
+          const minutesAgo = Math.floor(Math.random() * 240) // 0~4시간 전
+          return {
+            post_id: postId,
+            user_id: (p as { id: string }).id,
+            created_at: new Date(Date.now() - minutesAgo * 60 * 1000).toISOString(),
+          }
+        }) as never
+      )
+    }
+  }
+
   return NextResponse.json({
     success: true,
-    post: { id: (inserted as { id: string }).id, title: generated.title, author: username, category: catSlug },
+    post: { id: postId, title: generated.title, author: username, category: catSlug },
   })
 }
