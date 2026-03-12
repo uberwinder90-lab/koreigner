@@ -6,11 +6,11 @@ function checkSecret(req: NextRequest) {
 }
 
 const CATEGORY_WEIGHTS = [
-  { slug: 'free',        weight: 50 },
-  { slug: 'jobs',        weight: 20 },
-  { slug: 'realestate',  weight: 15 },
-  { slug: 'marketplace', weight: 10 },
-  { slug: 'info',        weight: 5  },
+  { slug: 'free',        weight: 65 },
+  { slug: 'jobs',        weight: 16 },
+  { slug: 'realestate',  weight: 10 },
+  { slug: 'marketplace', weight: 6  },
+  { slug: 'info',        weight: 3  },
 ]
 
 function weightedRandomCategory() {
@@ -186,7 +186,25 @@ export async function POST(req: NextRequest) {
   const format = POST_FORMATS[Math.floor(Math.random() * POST_FORMATS.length)]
   const { instruction: lengthInstruction } = getPostLength()
 
-  const systemPrompt = `You are writing a post for an online expat community forum (like Reddit) for foreigners living in Korea.
+  // 20% 확률로 외국인이 한국어로 작성
+  const writeInKorean = Math.random() < 0.20
+
+  const systemPrompt = writeInKorean
+    ? `You are a foreigner living in Korea writing a short post in Korean on a community forum.
+You are not a native Korean speaker — write simple, natural Korean with minor foreigner-style mistakes OK.
+Keep it SHORT (2-5 sentences max). Casual community post tone. No formal language.
+
+PERSONA: ${persona.background}
+
+CRITICAL RULES:
+1. Write ENTIRELY in Korean. Simple vocabulary. Slightly imperfect grammar is fine and even realistic.
+2. Sound like a foreigner who learned Korean — not textbook perfect, but readable.
+3. NEVER include contact info. No hashtags. No sign-off.
+4. Topic hint: ${topic}
+
+RESPOND with JSON only:
+{"title": "한국어 제목", "content": "<p>한국어 내용</p>"}`
+    : `You are writing a post for an online expat community forum (like Reddit) for foreigners living in Korea.
 
 PERSONA: ${persona.background}
 VOICE: ${persona.voice}
