@@ -195,7 +195,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 <button type="submit" disabled={loading} className="btn-primary w-full py-3">
-                  {loading ? 'Sending…' : 'Send Verification Code'}
+                  {loading ? 'Please wait…' : 'Next →'}
                 </button>
               </form>
             </>

@@ -36,15 +36,22 @@ export default async function SubmitPage({ searchParams }: Props) {
   ]
   const categories = (rawCats && rawCats.length > 0) ? rawCats : FALLBACK_CATEGORIES
 
+  const isAdmin = user.email === process.env.ADMIN_EMAIL
+
   let editPost = null
   if (edit) {
-    const { data: post } = await supabase
+    let query = supabase
       .from('posts')
       .select('*, post_media(id, file_url, display_order)')
       .eq('id', edit)
-      .eq('author_id', user.id)
       .eq('status', 'published')
-      .single()
+
+    // 관리자는 모든 글 수정 가능, 일반 유저는 자기 글만
+    if (!isAdmin) {
+      query = query.eq('author_id', user.id)
+    }
+
+    const { data: post } = await query.single()
 
     if (!post) redirect('/')
     editPost = post

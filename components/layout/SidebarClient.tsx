@@ -7,12 +7,15 @@ import { Search, ArrowRight } from 'lucide-react'
 import { useLang } from '@/lib/i18n'
 
 interface PopularPost { id: string; title: string; views_count: number }
+interface SiteBanner { id: string; title: string; subtitle: string | null; link_url: string | null; bg_color: string; text_color: string }
 
 export default function SidebarClient({
   bestPosts,
+  banners = [],
 }: {
   categories?: { id: number; name: string; slug: string }[]
   bestPosts: PopularPost[]
+  banners?: SiteBanner[]
 }) {
   const { t, lang } = useLang()
   const router = useRouter()
@@ -116,6 +119,31 @@ export default function SidebarClient({
           </ul>
         </div>
       )}
+
+      {/* ── Active banners ── */}
+      {banners.map(bn => (
+        <div key={bn.id} className="rounded-2xl overflow-hidden">
+          {bn.link_url ? (
+            <a href={bn.link_url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-3 px-5 py-4 hover:opacity-90 transition-opacity"
+              style={{ background: bn.bg_color, color: bn.text_color }}>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm">{bn.title}</p>
+                {bn.subtitle && <p className="text-xs opacity-80 mt-0.5">{bn.subtitle}</p>}
+              </div>
+              <ArrowRight className="h-4 w-4 flex-shrink-0 opacity-70" />
+            </a>
+          ) : (
+            <div className="flex items-center gap-3 px-5 py-4"
+              style={{ background: bn.bg_color, color: bn.text_color }}>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm">{bn.title}</p>
+                {bn.subtitle && <p className="text-xs opacity-80 mt-0.5">{bn.subtitle}</p>}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
 
       {/* ── Community stats ── */}
       <div className="card p-4">
