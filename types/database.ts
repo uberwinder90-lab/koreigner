@@ -235,6 +235,39 @@ export type Database = {
         }
         Relationships: []
       }
+      site_banners: {
+        Row: {
+          id: string
+          title: string
+          subtitle: string | null
+          link_url: string | null
+          bg_color: string
+          text_color: string
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          subtitle?: string | null
+          link_url?: string | null
+          bg_color?: string
+          text_color?: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          subtitle?: string | null
+          link_url?: string | null
+          bg_color?: string
+          text_color?: string
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
