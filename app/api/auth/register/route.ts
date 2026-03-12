@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       id: authData.user.id,
       username,
       display_name: displayName,
-    }, { onConflict: 'id' })
+    } as never, { onConflict: 'id' })
 
     if (profileError) {
       // username 중복 (UNIQUE constraint)이면 auth user 삭제 후 오류 반환
