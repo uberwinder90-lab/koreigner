@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Admin only' }, { status: 403 })
 
   const body = await request.json()
-  const { title, subtitle, link_url, bg_color, text_color, is_active } = body
+  const { title, subtitle, link_url, bg_color, text_color, is_active, is_popup } = body
   if (!title?.trim()) return NextResponse.json({ error: 'title required' }, { status: 400 })
 
   const db = getAdminSupabase()
@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       bg_color: bg_color ?? '#2563eb',
       text_color: text_color ?? '#ffffff',
       is_active: is_active ?? true,
+      is_popup: !!is_popup,
     } as never)
     .select()
     .single()

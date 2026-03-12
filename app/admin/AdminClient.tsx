@@ -25,6 +25,7 @@ interface SiteBanner {
   bg_color: string
   text_color: string
   is_active: boolean
+  is_popup: boolean
   created_at: string
 }
 
@@ -48,7 +49,7 @@ export default function AdminClient({
   const [banners, setBanners] = useState<SiteBanner[]>([])
   const [bannersLoading, setBannersLoading] = useState(false)
   const [bannerForm, setBannerForm] = useState({
-    title: '', subtitle: '', link_url: '', bg_color: '#2563eb', text_color: '#ffffff', is_active: true,
+    title: '', subtitle: '', link_url: '', bg_color: '#2563eb', text_color: '#ffffff', is_active: true, is_popup: false,
   })
   const [bannerSaving, setBannerSaving] = useState(false)
   const [editingBanner, setEditingBanner] = useState<string | null>(null)
@@ -122,7 +123,7 @@ export default function AdminClient({
         setBanners(b => [created, ...b])
       }
     }
-    setBannerForm({ title: '', subtitle: '', link_url: '', bg_color: '#2563eb', text_color: '#ffffff', is_active: true })
+    setBannerForm({ title: '', subtitle: '', link_url: '', bg_color: '#2563eb', text_color: '#ffffff', is_active: true, is_popup: false })
     setBannerSaving(false)
   }
 
@@ -150,6 +151,7 @@ export default function AdminClient({
       bg_color: bn.bg_color,
       text_color: bn.text_color,
       is_active: bn.is_active,
+      is_popup: bn.is_popup,
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -479,7 +481,7 @@ export default function AdminClient({
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" checked={bannerForm.is_active}
                       onChange={e => setBannerForm(f => ({ ...f, is_active: e.target.checked }))}
@@ -488,6 +490,14 @@ export default function AdminClient({
                     <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                   <span className="text-sm font-medium" style={{ color: 'var(--text-2)' }}>활성화</span>
+                  <label className="relative inline-flex items-center cursor-pointer ml-4">
+                    <input type="checkbox" checked={bannerForm.is_popup}
+                      onChange={e => setBannerForm(f => ({ ...f, is_popup: e.target.checked }))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-2)' }}>팝업으로 띄우기</span>
                 </div>
               </div>
 
@@ -501,7 +511,7 @@ export default function AdminClient({
                 </button>
                 {editingBanner && (
                   <button
-                    onClick={() => { setEditingBanner(null); setBannerForm({ title: '', subtitle: '', link_url: '', bg_color: '#2563eb', text_color: '#ffffff', is_active: true }) }}
+                    onClick={() => { setEditingBanner(null); setBannerForm({ title: '', subtitle: '', link_url: '', bg_color: '#2563eb', text_color: '#ffffff', is_active: true, is_popup: false }) }}
                     className="h-10 px-5 text-sm rounded-xl border font-medium"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-3)' }}
                   >

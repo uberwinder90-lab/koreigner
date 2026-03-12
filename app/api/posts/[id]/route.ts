@@ -22,10 +22,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const isAdmin = user.email === process.env.ADMIN_EMAIL
+
   const db = getAdminSupabase()
   const { data: existing } = await db.from('posts').select('author_id').eq('id', id).single()
   const post = existing as unknown as { author_id: string } | null
-  if (!post || post.author_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!post || (!isAdmin && post.author_id !== user.id)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { title, content, categoryId, embeddedUrl, mediaUrls } = await request.json()
 
@@ -57,10 +61,14 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const isAdmin = user.email === process.env.ADMIN_EMAIL
+
   const db = getAdminSupabase()
   const { data: existing } = await db.from('posts').select('author_id').eq('id', id).single()
   const post = existing as unknown as { author_id: string } | null
-  if (!post || post.author_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!post || (!isAdmin && post.author_id !== user.id)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   await db.from('posts').update({ status: 'deleted' } as never).eq('id', id)
   return NextResponse.json({ success: true })

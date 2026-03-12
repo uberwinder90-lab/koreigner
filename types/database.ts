@@ -244,6 +244,7 @@ export type Database = {
           bg_color: string
           text_color: string
           is_active: boolean
+          is_popup: boolean
           created_at: string
         }
         Insert: {
@@ -254,6 +255,7 @@ export type Database = {
           bg_color?: string
           text_color?: string
           is_active?: boolean
+          is_popup?: boolean
           created_at?: string
         }
         Update: {
@@ -264,6 +266,7 @@ export type Database = {
           bg_color?: string
           text_color?: string
           is_active?: boolean
+          is_popup?: boolean
           created_at?: string
         }
         Relationships: []
