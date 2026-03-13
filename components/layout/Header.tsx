@@ -39,7 +39,13 @@ function LangToggle() {
   )
 }
 
-function CategoryBarInner() {
+function CategoryBarInner({
+  onToggleSearch,
+  onToggleMenu,
+}: {
+  onToggleSearch: () => void
+  onToggleMenu: () => void
+}) {
   const { t } = useLang()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -57,25 +63,49 @@ function CategoryBarInner() {
 
   return (
     <div className="border-t bg-white" style={{ borderColor: 'var(--border)' }}>
-      <div className="page-container no-scrollbar flex h-12 items-center gap-2 overflow-x-auto">
-        {categories.map((cat) => {
-          const active = isHome && currentCat === cat.slug
-          const Icon = cat.icon
-          return (
-            <Link
-              key={cat.slug || 'all'}
-              href={cat.slug ? `/?category=${cat.slug}` : '/'}
-              className="inline-flex min-h-10 flex-shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition"
-              style={{
-                background: active ? 'var(--primary)' : 'var(--bg)',
-                color: active ? '#fff' : 'var(--text-2)',
-              }}
-            >
-              <Icon className="h-4 w-4" />
-              <span className="whitespace-nowrap">{cat.label}</span>
-            </Link>
-          )
-        })}
+      <div className="page-container py-2 space-y-2">
+        <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+          {categories.map((cat) => {
+            const active = isHome && currentCat === cat.slug
+            const Icon = cat.icon
+            return (
+              <Link
+                key={cat.slug || 'all'}
+                href={cat.slug ? `/?category=${cat.slug}` : '/'}
+                className="inline-flex min-h-10 flex-shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition"
+                style={{
+                  background: active ? 'var(--primary)' : 'var(--bg)',
+                  color: active ? '#fff' : 'var(--text-2)',
+                }}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="whitespace-nowrap">{cat.label}</span>
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Mobile-only actions under categories */}
+        <div className="flex justify-end gap-2 sm:hidden">
+          <button
+            type="button"
+            onClick={onToggleSearch}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
+            aria-label="Search"
+          >
+            <Search className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={onToggleMenu}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
+            aria-label="Toggle menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -195,7 +225,6 @@ export default function Header() {
               </Link>
             </div>
           )}
-
           <Link
             href={user ? '/submit' : '/login'}
             className="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-4 text-sm font-bold text-white shadow-sm transition hover:scale-[1.02]"
@@ -204,32 +233,14 @@ export default function Header() {
             <PencilLine className="h-4 w-4" />
             <span className="hidden sm:inline">{t.write}</span>
           </Link>
-
-          {/* Mobile search icon */}
-          <button
-            type="button"
-            onClick={() => { setSearchOpen(v => !v); setMobileOpen(false) }}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border sm:hidden"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
-            aria-label="Search"
-          >
-            <Search className="h-5 w-5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { setMobileOpen((v) => !v); setSearchOpen(false) }}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border sm:hidden"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
         </div>
       </div>
 
       <Suspense fallback={null}>
-        <CategoryBarInner />
+        <CategoryBarInner
+          onToggleSearch={() => { setSearchOpen(v => !v); setMobileOpen(false) }}
+          onToggleMenu={() => { setMobileOpen(v => !v); setSearchOpen(false) }}
+        />
       </Suspense>
 
       {/* Mobile search bar */}
