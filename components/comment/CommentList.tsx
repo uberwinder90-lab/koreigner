@@ -65,7 +65,13 @@ export default function CommentList({ postId, currentUser }: Props) {
     return (
       <div className={cls} style={{ background: 'var(--primary-light)' }}>
         {profile.profile_image_url ? (
-          <Image src={profile.profile_image_url} alt={profile.display_name} fill className="object-cover" />
+          <Image
+            src={profile.profile_image_url}
+            alt={profile.display_name}
+            fill
+            className="object-cover"
+            unoptimized
+          />
         ) : (
           <span className="absolute inset-0 flex items-center justify-center text-xs font-bold"
             style={{ color: 'var(--primary)' }}>{profile.display_name[0]?.toUpperCase()}</span>

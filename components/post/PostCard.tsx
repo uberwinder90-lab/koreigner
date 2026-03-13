@@ -79,7 +79,13 @@ export default function PostCard({ post, isNew, isBest }: PostCardProps) {
             >
               <span className="relative h-7 w-7 overflow-hidden rounded-full" style={{ background: 'var(--primary-light)' }}>
                 {post.profiles?.profile_image_url ? (
-                  <Image src={post.profiles.profile_image_url} alt={post.profiles.display_name} fill className="object-cover" />
+                  <Image
+                    src={post.profiles.profile_image_url}
+                    alt={post.profiles.display_name}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
                 ) : (
                   <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: 'var(--primary)' }}>
                     {(post.profiles?.display_name?.[0] ?? 'U').toUpperCase()}
