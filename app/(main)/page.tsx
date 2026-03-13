@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import PostCard from '@/components/post/PostCard'
 import Sidebar from '@/components/layout/Sidebar'
