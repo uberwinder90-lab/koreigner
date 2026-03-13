@@ -167,7 +167,7 @@ function ToolBtn({ title, onClick, children }: { title: string; onClick: () => v
 
 export default function SubmitForm({ categories, editPost }: Props) {
   const router = useRouter()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const fileRef = useRef<HTMLInputElement>(null)
   const inlineImageRef = useRef<HTMLInputElement>(null)
   const inlineVideoRef = useRef<HTMLInputElement>(null)
@@ -460,7 +460,13 @@ export default function SubmitForm({ categories, editPost }: Props) {
                                 if (e.key === 'i') { e.preventDefault(); updateBlock(block.id, { content: applyFormat(e.currentTarget, 'italic') }) }
                               }
                             }}
-                            placeholder={blocks.length > 1 ? '이어서 작성…' : '글을 작성하세요. 위에서 이미지/영상 버튼으로 본문에 바로 삽입할 수 있습니다.'}
+                            placeholder={
+                              blocks.length > 1
+                                ? (lang === 'ko' ? '이어서 작성…' : 'Continue writing…')
+                                : (lang === 'ko'
+                                  ? '글을 작성하세요. 위에서 이미지/영상 버튼으로 본문에 바로 삽입할 수 있습니다.'
+                                  : 'Write your post. Use the image/video buttons above to insert media directly into the content.')
+                            }
                             className="w-full resize-none outline-none px-4 py-3 text-sm leading-relaxed"
                             style={{
                               color: 'var(--text-2)',
@@ -521,7 +527,9 @@ export default function SubmitForm({ categories, editPost }: Props) {
                 </div>
               )}
               <p className="text-xs px-4 py-2 border-t" style={{ color: 'var(--text-4)', borderColor: 'var(--border)' }}>
-                한 영역에서 글 쓰다가 이미지/영상 버튼을 누르면 여기 본문에 바로 삽입됩니다. 크기는 미디어에 마우스를 올려 조절하세요.
+                {lang === 'ko'
+                  ? '한 영역에서 글 쓰다가 이미지/영상 버튼을 누르면 여기 본문에 바로 삽입됩니다. 크기는 미디어에 마우스를 올려 조절하세요.'
+                  : 'While writing, click the image/video buttons to insert media directly into the content. Hover the media to adjust its size.'}
               </p>
             </div>
 

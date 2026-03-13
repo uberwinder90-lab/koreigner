@@ -1,9 +1,9 @@
 import { Suspense } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import PostCard from '@/components/post/PostCard'
 import Sidebar from '@/components/layout/Sidebar'
 import HomeHeader from '@/components/home/HomeHeader'
+import EmptyState from '@/components/home/EmptyState'
 
 interface PostCardPost {
   id: string
@@ -66,12 +66,7 @@ async function PostList({ tab, category, page, q }: { tab: string; category?: st
 
   if (!posts.length) {
     return (
-      <div className="card py-16 text-center">
-        <div className="text-4xl mb-4">✍️</div>
-        <p className="font-semibold mb-1" style={{ color: 'var(--text-2)' }}>아직 게시글이 없어요</p>
-        <p className="text-sm mb-5" style={{ color: 'var(--text-4)' }}>첫 번째 게시글을 작성해 보세요!</p>
-        <Link href="/submit" className="btn-primary">글쓰기</Link>
-      </div>
+      <EmptyState />
     )
   }
 
@@ -122,8 +117,8 @@ export default async function HomePage({ searchParams }: Props) {
   const page = Math.max(1, parseInt(pageStr))
 
   return (
-    <div className="page-container py-8">
-      <div className="flex gap-7">
+    <div className="page-container py-6 sm:py-8">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-7">
         {/* Main */}
         <div className="flex-1 min-w-0">
           <HomeHeader tab={tab} category={category} q={q} />
