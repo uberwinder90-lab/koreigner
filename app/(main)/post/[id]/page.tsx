@@ -91,7 +91,13 @@ export default async function PostPage({ params }: Props) {
               <Link href={`/profile/${author.username}`} className="inline-flex items-center gap-2 mb-4 group">
                 <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0" style={{ background: 'var(--primary-light)' }}>
                   {author.profile_image_url ? (
-                    <Image src={author.profile_image_url} alt={author.display_name} fill className="object-cover" />
+                    <Image
+                      src={author.profile_image_url}
+                      alt={author.display_name}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
                   ) : (
                     <span className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color: 'var(--primary)' }}>
                       {author.display_name[0]?.toUpperCase()}
