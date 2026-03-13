@@ -15,9 +15,10 @@ export async function GET() {
     .select(`
       id, content, created_at, status, author_id, post_id,
       profiles!comments_author_id_fkey(username, display_name),
-      posts!comments_post_id_fkey(title)
+      posts!comments_post_id_fkey(title, status)
     `)
     .neq('status', 'deleted')
+    .eq('posts.status', 'published')
     .order('created_at', { ascending: false })
     .limit(100)
 

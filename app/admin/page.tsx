@@ -22,7 +22,7 @@ export default async function AdminPage() {
       .select('id, title, created_at, views_count, status, profiles!posts_author_id_fkey(username, display_name), categories!posts_category_id_fkey(name, slug)', { count: 'exact' })
       .order('created_at', { ascending: false })
       .limit(50),
-    db.from('profiles').select('id, username, display_name, created_at').order('created_at', { ascending: false }).limit(30),
+    db.from('profiles').select('id, username, display_name, profile_image_url, created_at').order('created_at', { ascending: false }).limit(30),
     db.from('post_reports').select('id, reason, created_at, post_id, user_id').order('created_at', { ascending: false }).limit(20),
   ])
 
@@ -60,7 +60,7 @@ export interface AdminPost {
   profiles: { username: string; display_name: string } | null
   categories: { name: string; slug: string } | null
 }
-export interface AdminUser { id: string; username: string; display_name: string; created_at: string }
+export interface AdminUser { id: string; username: string; display_name: string; profile_image_url: string | null; created_at: string }
 export interface AdminReport {
   id: string; reason: string; created_at: string; post_id: string
   posts: { title: string } | null

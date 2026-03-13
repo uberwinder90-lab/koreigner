@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import type { AdminPost, AdminUser, AdminReport } from './page'
 
@@ -38,6 +39,7 @@ export default function AdminClient({
   const [posts, setPosts] = useState(initialPosts)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [userList, setUserList] = useState(users)
 
   // Comments
   const [comments, setComments] = useState<AdminComment[]>([])
@@ -53,6 +55,17 @@ export default function AdminClient({
   })
   const [bannerSaving, setBannerSaving] = useState(false)
   const [editingBanner, setEditingBanner] = useState<string | null>(null)
+
+  // User editing
+  const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const [userForm, setUserForm] = useState<{ username: string; displayName: string; profileImageUrl: string | null }>({
+    username: '',
+    displayName: '',
+    profileImageUrl: null,
+  })
+  const [userSaving, setUserSaving] = useState(false)
+  const [userError, setUserError] = useState<string | null>(null)
+  const userFileRef = useRef<HTMLInputElement | null>(null)
 
   async function deletePost(id: string) {
     if (!confirm('이 게시글을 삭제할까요?')) return
@@ -163,7 +176,7 @@ export default function AdminClient({
   const tabs: { id: Tab; label: string; count: number | null }[] = [
     { id: 'posts', label: '게시글', count: postCount },
     { id: 'comments', label: '댓글', count: comments.length || null },
-    { id: 'users', label: '회원', count: users.length },
+    { id: 'users', label: '회원', count: userList.length },
     { id: 'reports', label: '신고', count: reports.length },
     { id: 'banner', label: '배너', count: null },
   ]
@@ -342,26 +355,176 @@ export default function AdminClient({
 
         {/* ── 회원 탭 ── */}
         {tab === 'users' && (
-          <div className="card overflow-hidden">
-            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-              {users.map(u => (
-                <div key={u.id} className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                    style={{ background: 'var(--primary)' }}>
-                    {(u.display_name?.[0] ?? u.username[0]).toUpperCase()}
+          <div className="space-y-4">
+            <div className="card overflow-hidden">
+              <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                {userList.map(u => (
+                  <div key={u.id} className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
+                    <div className="w-9 h-9 rounded-full flex-shrink-0 overflow-hidden bg-[var(--primary-light)] relative flex items-center justify-center text-sm font-bold text-white">
+                      {u.profile_image_url ? (
+                        <Image src={u.profile_image_url} alt={u.display_name} fill className="object-cover" unoptimized />
+                      ) : (
+                        (u.display_name?.[0] ?? u.username[0]).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>{u.display_name}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-4)' }}>@{u.username} · 가입: {new Date(u.created_at).toLocaleDateString('ko-KR')}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingUserId(u.id)
+                          setUserError(null)
+                          setUserForm({
+                            username: u.username,
+                            displayName: u.display_name,
+                            profileImageUrl: u.profile_image_url,
+                          })
+                        }}
+                        className="inline-flex h-8 items-center rounded-lg border px-3 text-xs font-medium hover:bg-slate-50"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
+                      >
+                        수정
+                      </button>
+                      <Link href={`/profile/${u.username}`} target="_blank"
+                        className="text-xs font-medium hover:underline"
+                        style={{ color: 'var(--primary)' }}>
+                        프로필 →
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>{u.display_name}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-4)' }}>@{u.username} · 가입: {new Date(u.created_at).toLocaleDateString('ko-KR')}</p>
-                  </div>
-                  <Link href={`/profile/${u.username}`} target="_blank"
-                    className="text-xs font-medium hover:underline"
-                    style={{ color: 'var(--primary)' }}>
-                    프로필 →
-                  </Link>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+
+            {editingUserId && (
+              <div className="card p-5">
+                <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--text-1)' }}>
+                  회원 정보 수정
+                </h3>
+                {userError && (
+                  <p className="text-xs mb-3" style={{ color: 'var(--danger)' }}>
+                    {userError}
+                  </p>
+                )}
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                  <div className="flex flex-col items-center gap-2">
+                    <div
+                      className="w-16 h-16 rounded-full overflow-hidden bg-[var(--primary-light)] relative cursor-pointer"
+                      onClick={() => userFileRef.current?.click()}
+                    >
+                      {userForm.profileImageUrl ? (
+                        <Image src={userForm.profileImageUrl} alt={userForm.displayName} fill className="object-cover" unoptimized />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-sm font-bold text-primary">
+                          {(userForm.displayName[0] || userForm.username[0] || 'U').toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => userFileRef.current?.click()}
+                      className="text-xs font-medium underline"
+                      style={{ color: 'var(--text-3)' }}
+                    >
+                      프로필 이미지 변경
+                    </button>
+                    <input
+                      ref={userFileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        const form = new FormData()
+                        form.append('file', file)
+                        const res = await fetch('/api/upload', { method: 'POST', body: form })
+                        const data = await res.json()
+                        if (!res.ok || !data?.url) {
+                          setUserError(data?.error || '이미지 업로드에 실패했습니다.')
+                          return
+                        }
+                        setUserForm(f => ({ ...f, profileImageUrl: data.url as string }))
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <label className="label">Display Name</label>
+                      <input
+                        value={userForm.displayName}
+                        onChange={e => setUserForm(f => ({ ...f, displayName: e.target.value }))}
+                        className="input-field text-sm"
+                        maxLength={50}
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Username</label>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-text-tertiary">@</span>
+                        <input
+                          value={userForm.username}
+                          onChange={e => setUserForm(f => ({ ...f, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}
+                          className="input-field text-sm"
+                          maxLength={20}
+                        />
+                      </div>
+                      <p className="text-[11px] mt-1" style={{ color: 'var(--text-4)' }}>
+                        3–20 characters; lowercase letters, numbers, underscores
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setEditingUserId(null); setUserError(null) }}
+                    className="h-9 px-4 rounded-xl border text-xs font-medium"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-3)' }}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    disabled={userSaving}
+                    onClick={async () => {
+                      if (!userForm.username.trim() || !userForm.displayName.trim()) {
+                        setUserError('Display Name과 Username을 모두 입력하세요.')
+                        return
+                      }
+                      setUserSaving(true)
+                      setUserError(null)
+                      const res = await fetch(`/api/admin/users/${editingUserId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          username: userForm.username,
+                          displayName: userForm.displayName,
+                          profileImageUrl: userForm.profileImageUrl,
+                        }),
+                      })
+                      const data = await res.json()
+                      setUserSaving(false)
+                      if (!res.ok) {
+                        setUserError(data.error || '저장에 실패했습니다.')
+                        return
+                      }
+                      setUserList(list => list.map(u => u.id === editingUserId
+                        ? { ...u, username: userForm.username, display_name: userForm.displayName, profile_image_url: userForm.profileImageUrl }
+                        : u,
+                      ))
+                      setEditingUserId(null)
+                    }}
+                    className="btn-primary h-9 px-4 text-xs font-medium"
+                  >
+                    {userSaving ? '저장 중…' : '변경 사항 저장'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

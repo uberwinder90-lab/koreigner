@@ -70,6 +70,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  await db.from('posts').update({ status: 'deleted' } as never).eq('id', id)
+  // 연관 데이터(댓글, 좋아요, 미디어, 신고) 모두 정리 후 게시글 완전 삭제
+  await db.from('comments').delete().eq('post_id', id)
+  await db.from('post_likes').delete().eq('post_id', id)
+  await db.from('post_media').delete().eq('post_id', id)
+  await db.from('post_reports').delete().eq('post_id', id)
+  await db.from('posts').delete().eq('id', id)
   return NextResponse.json({ success: true })
 }
