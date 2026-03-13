@@ -39,13 +39,7 @@ function LangToggle() {
   )
 }
 
-function CategoryBarInner({
-  onToggleSearch,
-  onToggleMenu,
-}: {
-  onToggleSearch: () => void
-  onToggleMenu: () => void
-}) {
+function CategoryBarInner() {
   const { t } = useLang()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -63,7 +57,7 @@ function CategoryBarInner({
 
   return (
     <div className="border-t bg-white" style={{ borderColor: 'var(--border)' }}>
-      <div className="page-container py-2 space-y-2">
+      <div className="page-container py-2">
         <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
           {categories.map((cat) => {
             const active = isHome && currentCat === cat.slug
@@ -84,28 +78,6 @@ function CategoryBarInner({
             )
           })}
         </div>
-
-        {/* Mobile-only actions under categories */}
-        <div className="flex justify-end gap-2 sm:hidden">
-          <button
-            type="button"
-            onClick={onToggleSearch}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
-            aria-label="Search"
-          >
-            <Search className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={onToggleMenu}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
-            aria-label="Toggle menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
       </div>
     </div>
   )
@@ -118,7 +90,6 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const dropRef = useRef<HTMLDivElement>(null)
 
@@ -177,7 +148,7 @@ export default function Header() {
           <LangToggle />
 
           {user ? (
-            <div className="relative" ref={dropRef}>
+            <div className="relative hidden sm:block" ref={dropRef}>
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
@@ -233,46 +204,51 @@ export default function Header() {
             <PencilLine className="h-4 w-4" />
             <span className="hidden sm:inline">{t.write}</span>
           </Link>
+
+          {/* Mobile menu toggle (profile actions handled inside menu) */}
+          <button
+            type="button"
+            onClick={() => setMobileOpen(v => !v)}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border sm:hidden"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </div>
 
       <Suspense fallback={null}>
-        <CategoryBarInner
-          onToggleSearch={() => { setSearchOpen(v => !v); setMobileOpen(false) }}
-          onToggleMenu={() => { setMobileOpen(v => !v); setSearchOpen(false) }}
-        />
+        <CategoryBarInner />
       </Suspense>
 
-      {/* Mobile search bar */}
-      {searchOpen && (
-        <div className="border-t bg-white sm:hidden" style={{ borderColor: 'var(--border)' }}>
-          <div className="page-container py-3">
-            <form
-              onSubmit={e => {
-                e.preventDefault()
-                const q = searchQuery.trim()
-                if (q) { router.push(`/?q=${encodeURIComponent(q)}`); setSearchOpen(false); setSearchQuery('') }
-              }}
-              className="flex gap-2"
-            >
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  autoFocus
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder={lang === 'ko' ? '검색어 입력…' : 'Search…'}
-                  className="h-11 w-full rounded-xl border bg-white pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-1)' }}
-                />
-              </div>
-              <button type="submit" className="inline-flex h-11 items-center rounded-xl px-4 text-sm font-bold text-white" style={{ background: 'var(--primary)' }}>
-                {t.search}
-              </button>
-            </form>
-          </div>
+      {/* Mobile search bar (always visible, no separate icon) */}
+      <div className="border-t bg-white sm:hidden" style={{ borderColor: 'var(--border)' }}>
+        <div className="page-container py-3">
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              const q = searchQuery.trim()
+              if (q) { router.push(`/?q=${encodeURIComponent(q)}`); setSearchQuery('') }
+            }}
+            className="flex gap-2"
+          >
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder={lang === 'ko' ? '검색어 입력…' : 'Search…'}
+                className="h-11 w-full rounded-xl border bg-white pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-1)' }}
+              />
+            </div>
+            <button type="submit" className="inline-flex h-11 items-center rounded-xl px-4 text-sm font-bold text-white" style={{ background: 'var(--primary)' }}>
+              {t.search}
+            </button>
+          </form>
         </div>
-      )}
+      </div>
 
       {mobileOpen && (
         <div className="border-t bg-white sm:hidden" style={{ borderColor: 'var(--border)' }}>
