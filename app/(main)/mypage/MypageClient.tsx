@@ -53,19 +53,16 @@ export default function MypageClient({ user, profile }: Props) {
     let imageUrl = profile.profile_image_url
 
     if (profileFile) {
-      const ext = profileFile.name.split('.').pop()
-      const path = `${user.id}/avatar.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(path, profileFile, { upsert: true })
-
-      if (uploadError) {
-        setMessage({ type: 'error', text: 'Failed to upload image.' })
+      const form = new FormData()
+      form.append('file', profileFile)
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok || !data?.url) {
+        setMessage({ type: 'error', text: data?.error || 'Failed to upload image.' })
         setLoading(false)
         return
       }
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      imageUrl = publicUrl
+      imageUrl = data.url as string
     }
 
     const { error } = await supabase

@@ -63,6 +63,7 @@ export default async function ProfilePage({ params }: Props) {
                 alt={profile.display_name}
                 fill
                 className="object-cover"
+                unoptimized
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-primary">
